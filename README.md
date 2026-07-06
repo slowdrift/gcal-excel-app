@@ -2,7 +2,7 @@
 
 Googleカレンダー（またはICSファイル）の予定を、A4横の週間スケジュール表（15分単位・Excel形式）に変換するブラウザアプリです。
 
-👉 **アプリを開く**: https://slowdrift.github.io/gcal-excel/
+👉 **アプリを開く**: https://slowdrift.github.io/gcal-excel-app/
 
 ## 特徴
 
