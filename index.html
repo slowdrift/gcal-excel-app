@@ -836,7 +836,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 <div class="header">
   <div class="header-row">
     <h1>Googleカレンダー → Excel 変換<span class="header-suffix">（Webアプリ）</span></h1>
-    <div class="header-version" onclick="showChangelog()" title="クリックで更新履歴を表示">v1.8.3&nbsp;&nbsp;•&nbsp;&nbsp;2026-07-08</div>
+    <div class="header-version" onclick="showChangelog()" title="クリックで更新履歴を表示">v1.9.0&nbsp;&nbsp;•&nbsp;&nbsp;2026-07-13</div>
   </div>
   <p>Googleカレンダーの予定を週間スケジュール表（15分単位）としてExcelに出力します</p>
   <div id="dqStatusBar" style="display:none" onclick="showAchievementsModal()" title="クリックで「ぼうけんのきろく」を開く"></div>
@@ -971,7 +971,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
         <select id="calSelect2"><option value="">追加しない</option></select>
       </div>
       <div id="calSelect3Wrap" style="margin-top:6px">
-        <label>追加カレンダー（3つ目）<span style="font-size:0.75rem;color:var(--text-muted)">(任意・プリセット保存なし)</span></label>
+        <label>追加カレンダー（3つ目）<span style="font-size:0.75rem;color:var(--text-muted)">(任意)</span> <span id="presetLabel3" style="font-size:0.75rem;color:var(--accent);margin-left:6px;cursor:pointer" onclick="setPresetCal3()" title="現在の選択をプリセットに設定">📌 プリセット設定</span></label>
         <select id="calSelect3"><option value="">追加しない</option></select>
       </div>
     </div>
@@ -1041,15 +1041,15 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
           <li>1週＝1ページで印刷（日曜行の次で改ページ）</li>
         </ul>
 
-        <div class="rpanel-cat">⑩ 時間帯の表示 <span style="font-size:0.78rem;color:var(--text-muted)">→ 処理ログ 📋（17時以降）／ 🔁（時間外3行超過）</span></div>
+        <div class="rpanel-cat">⑩ 時間帯の表示 <span style="font-size:0.78rem;color:var(--text-muted)">→ 処理ログ 📋（17時以降）／ 🔁（時間外4行超過）</span></div>
         <ul class="rpanel-ul">
           <li>グリッド：9:00〜17:00（15分刻み・時刻ラベルは整時のみ）</li>
           <li>9:00前開始の予定 → ヘッダー行に概要表示</li>
           <li>12:00〜12:45（4スロット）→ 昼休み時間帯（罫線・色は通常グリッドと同じ）</li>
           <li>13:00行 → 上罫線で午後の開始を明示</li>
-          <li>17:00以降開始の予定 → 「時間外」3行に表示</li>
+          <li>17:00以降開始の予定 → 「時間外」4行に表示</li>
           <li>17:00前開始で17:00以降に終わる予定 → 時間外行に延伸表示</li>
-          <li>時間外3行を超える予定 → 非表示（※処理ログに記録）</li>
+          <li>時間外4行を超える予定 → 非表示（※処理ログに記録）</li>
         </ul>
 
         <div class="rpanel-cat">⑪ タイトル・場所のテキスト整形 <span style="font-size:0.78rem;color:var(--text-muted)">→ 処理ログ ✂️（文言削除）／ 📍（住所整形）</span></div>
@@ -1191,9 +1191,9 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   </div>
 
   <div style="margin-bottom:12px">
-    <label for="outFileName" style="display:block;font-size:0.82rem;color:var(--text-muted);margin-bottom:4px">📝 ファイル名（拡張子 <code>.xlsx</code> は自動で付きます）</label>
-    <input type="text" id="outFileName" placeholder="schedule_開始日" style="width:100%;padding:6px 10px;font-size:0.9rem;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text)">
-    <p class="hint" style="margin-top:4px;margin-bottom:0">※ 空欄にすると自動の名前（schedule_開始日）に戻ります。使えない文字（\ / : * ? " &lt; &gt; |）は自動で「_」に置き換えます</p>
+    <label for="outFileName" style="display:block;font-size:0.82rem;color:var(--text-muted);margin-bottom:4px">📝 ファイル名（基本名）<span id="fnamePresetLabel" style="font-size:0.75rem;color:var(--accent);margin-left:6px"></span><span style="font-size:0.75rem;color:var(--accent);margin-left:6px;cursor:pointer" onclick="saveFilenamePreset()" title="現在の入力をプリセットとして保存（次回も復元）">📌 プリセット保存</span></label>
+    <input type="text" id="outFileName" placeholder="schedule_YYYYMMDD" style="width:100%;padding:6px 10px;font-size:0.9rem;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text)">
+    <p class="hint" style="margin-top:4px;margin-bottom:0">※ 実際のファイル名は「基本名 <b>＋ 作成日(YYYYMMDD)</b> ＋ .xlsx」になります（例：<code>経理チーム週間予定_20260713.xlsx</code>）。空欄なら <code>schedule</code>。使えない文字（\ / : * ? " &lt; &gt; |）は自動で「_」に置換します</p>
   </div>
 
   <div class="btn-row" style="gap:8px;flex-wrap:wrap">
@@ -1712,7 +1712,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 const SH = 9;
 const EH = 17;
 const SLOTS = 33;
-const OT = 3;
+const OT = 4;  // 時間外（17時以降）の表示行数。3→4に増やし夕方予定の取りこぼしを軽減（項目6-2）
 const BLKHDR = 5;
 const BLKFTR = 4;
 const BLOCK = BLKHDR + SLOTS + OT + BLKFTR;
@@ -3238,6 +3238,16 @@ function setupLogoSecret() {
 // ── 更新履歴 ──────
 const CHANGELOG = [
   {
+    version: '1.9.0', date: '2026-07-13',
+    changes: [
+      { type: 'fix', text: '予定のタイトル・場所・説明に混入したHTMLタグ（<br>等）や実体参照（&amp;等）を自動で整形。HTMLメール由来の予定で「<br>」がそのまま表示される問題を解消（処理ログに「🧹 HTMLタグ・記号の整形」を追加）' },
+      { type: 'feature', text: '時間外（17時以降）の表示枠を3行→4行に拡張。夕方の予定が枠不足で表示されないケースを軽減' },
+      { type: 'feature', text: 'Googleログインの有効期限切れ（401）を分かりやすく表示し、ワンクリックで再認証→自動で再取得できるように改善' },
+      { type: 'feature', text: '出力ファイル名を「基本名＋作成日(YYYYMMDD)」に変更し、📌でファイル名プリセットを保存・次回復元できるように（デスクトップで同名重複を避けやすく）' },
+      { type: 'feature', text: '3つ目の追加カレンダーもプリセット保存できるように（1つ目・2つ目と同様）' },
+    ],
+  },
+  {
     version: '1.8.3', date: '2026-07-08',
     changes: [
       { type: 'feature', text: '出力ファイル名をStep3で編集できるように追加。空欄なら自動名（schedule_開始日）に戻り、拡張子 .xlsx は自動付与（二重に付きません）。使えない文字（\\ / : * ? " < > |）は自動で「_」に置換' },
@@ -3457,6 +3467,27 @@ let presetCalId = 'primary';
 
 // ── UI ユーティリティ ────────────────────────────────────
 function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+// HTMLタグ・エンティティをプレーンテキスト化（項目5-1/3-1）
+// HTMLメール由来などで予定の summary / location / description に <br> 等が混入し、
+// Excel にそのまま literal 表示される問題への対策。取得データ全体に共通適用する。
+function stripHtml(s) {
+  if (!s) return '';
+  return String(s)
+    // タグは先に処理（エンティティ復元より前に行い、&lt;b&gt; を誤ってタグ扱いしない）
+    .replace(/<\s*br\s*\/?\s*>/gi, '\n')                 // <br> / <br/> / <br /> → 改行
+    .replace(/<\s*\/?\s*(?:p|div|li|tr)\b[^>]*>/gi, '\n') // 段落・行ブロックの境界 → 改行
+    .replace(/<[^>]+>/g, '')                              // 残りのタグ（<b> 等）を除去
+    // HTMLエンティティを実文字へ（&amp; は最後に復元）
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&lt;/gi, '<').replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"').replace(/(&#0*39;|&apos;)/gi, "'")
+    .replace(/&#(\d+);/g, (_, n) => { try { return String.fromCodePoint(+n); } catch { return ''; } })
+    .replace(/&amp;/gi, '&')
+    // 体裁：過剰な空白・改行を圧縮
+    .replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n')
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim();
+}
 function toDateStr(d) {
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
@@ -3468,36 +3499,45 @@ function snapToMonday(input) {
     d.setDate(d.getDate() + (dow === 0 ? -6 : 1 - dow));
     input.value = toDateStr(d);
   }
-  syncFilenameField();
 }
 
-// ── 出力ファイル名（項目2）─────────────────────
-// 開始日から自動生成する既定のファイル名（拡張子なし）
-function autoFilename() {
-  const startStr = document.getElementById('startDate')?.value || '';
-  return startStr ? `schedule_${startStr}` : 'schedule';
+// ── 出力ファイル名（項目2 / 項目7）─────────────────────
+// 出力名は「入力欄の基本名（プリセット）＋ 本日日付」。日付は"作成日"（ダウンロード日）。
+function defaultFilenameBase() { return 'schedule'; }
+function todayYmd() {
+  const d = new Date();
+  return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
 }
-// 入力欄を既定名で同期。ユーザーが手入力していれば上書きしない
-// （現在値が空 or 前回の自動名と同じときだけ差し替える）
-function syncFilenameField() {
+// 起動時：保存済みプリセット（基本名）を入力欄へ復元。プレースホルダに出力例を表示
+function loadFilenamePreset() {
   const el = document.getElementById('outFileName');
   if (!el) return;
-  const auto = autoFilename();
-  el.placeholder = auto;
-  if (!el.value.trim() || el.value === el.dataset.auto) el.value = auto;
-  el.dataset.auto = auto;
+  const saved = localStorage.getItem('gcal_filename_preset');
+  if (saved != null) el.value = saved;
+  el.placeholder = defaultFilenameBase() + '_' + todayYmd();
+  const lbl = document.getElementById('fnamePresetLabel');
+  if (lbl) lbl.textContent = (saved != null && saved !== '') ? '📌 保存済' : '';
 }
-// 入力欄の値を安全なファイル名に整えて返す（拡張子 .xlsx 付き）
+// 📌 現在の入力を「基本名プリセット」として保存（保存を押した時だけ localStorage を更新）
+function saveFilenamePreset() {
+  const el = document.getElementById('outFileName');
+  if (!el) return;
+  const v = (el.value || '').trim();
+  if (v) localStorage.setItem('gcal_filename_preset', v);
+  else localStorage.removeItem('gcal_filename_preset');
+  const lbl = document.getElementById('fnamePresetLabel');
+  if (lbl) lbl.textContent = v ? '📌 保存済' : '';
+}
+// 出力ファイル名を解決：{基本名}_{本日YYYYMMDD}.xlsx（サニタイズ・.xlsx二重防止）
 function resolveFilename() {
-  let name = (document.getElementById('outFileName')?.value || '').trim();
-  if (!name) name = autoFilename();                 // 空欄→既定名にフォールバック
-  name = name.replace(/\.xlsx$/i, '');              // 既に付いた .xlsx を一旦除去（二重化防止）
-  name = name.replace(/[\\/:*?"<>|]/g, '_');        // Windows で使えない文字を _ に
-  name = name.replace(/[\x00-\x1f]/g, '');          // 制御文字を除去
-  name = name.replace(/[ .]+$/, '').trim();         // 末尾の空白・ドットを除去
-  if (!name) name = autoFilename();                 // 整形の結果が空なら既定名
-  if (name.length > 100) name = name.slice(0, 100); // 長すぎる名前を抑制
-  return name + '.xlsx';
+  let base = (document.getElementById('outFileName')?.value || '').trim();
+  base = base.replace(/\.xlsx$/i, '');              // 誤って付けた拡張子を除去
+  base = base.replace(/[\\/:*?"<>|]/g, '_');        // Windows で使えない文字を _ に
+  base = base.replace(/[\x00-\x1f]/g, '');          // 制御文字を除去
+  base = base.replace(/[ .]+$/, '').trim();         // 末尾の空白・ドットを除去
+  if (!base) base = defaultFilenameBase();          // 空欄→既定の基本名
+  if (base.length > 80) base = base.slice(0, 80);   // 長すぎる名前を抑制
+  return `${base}_${todayYmd()}.xlsx`;              // 出力日（作成日）を自動付加
 }
 function shiftWeek(delta) {
   const el = document.getElementById('startDate');
@@ -3506,7 +3546,6 @@ function shiftWeek(delta) {
   if (dow !== 1) base.setDate(base.getDate() + (dow === 0 ? -6 : 1 - dow));
   base.setDate(base.getDate() + delta * 7);
   el.value = toDateStr(base);
-  syncFilenameField();
 }
 
 // ── スキル：開始日ジャンプ（ルーラ＝翌週月曜／リレミト＝今週月曜）──
@@ -3517,12 +3556,12 @@ function thisWeekMonday() {
 }
 function skillJumpThisMonday() {
   const el = document.getElementById('startDate');
-  if (el) { el.value = toDateStr(thisWeekMonday()); syncFilenameField(); }
+  if (el) el.value = toDateStr(thisWeekMonday());
 }
 function skillJumpNextMonday() {
   const el = document.getElementById('startDate');
   const m = thisWeekMonday(); m.setDate(m.getDate() + 7);
-  if (el) { el.value = toDateStr(m); syncFilenameField(); }
+  if (el) el.value = toDateStr(m);
 }
 // スキル習得状況に応じて開始日ボタンを描画
 function renderSkillDateButtons() {
@@ -3783,6 +3822,16 @@ function setPresetCal2() {
   const lbl = document.getElementById('presetLabel2');
   if (lbl) lbl.textContent = v ? '📌 プリセット済: ' + sel.options[sel.selectedIndex].text : '';
 }
+// 項目5-2: 3つ目のカレンダーもプリセット保存可能に（setPresetCal2 と同じ仕組み）
+function setPresetCal3() {
+  const sel = document.getElementById('calSelect3');
+  if (!sel) return;
+  const v = sel.value;
+  if (v) localStorage.setItem('gcal_preset_calid3', v);
+  else localStorage.removeItem('gcal_preset_calid3');
+  const lbl = document.getElementById('presetLabel3');
+  if (lbl) lbl.textContent = v ? '📌 プリセット済: ' + sel.options[sel.selectedIndex].text : '';
+}
 function loadPresetCal() {
   const saved = localStorage.getItem('gcal_preset_calid');
   if (saved) presetCalId = saved;
@@ -3796,6 +3845,20 @@ function loadPresetCal2() {
     if (o.value === saved) { sel.selectedIndex = i; }
   });
   const lbl = document.getElementById('presetLabel2');
+  if (lbl && sel.selectedIndex >= 0) {
+    const txt = sel.options[sel.selectedIndex]?.text;
+    if (sel.value) lbl.textContent = '📌 プリセット済: ' + txt;
+  }
+}
+// 項目5-2: 3つ目のカレンダーのプリセットを復元（loadPresetCal2 と同じ仕組み）
+function loadPresetCal3() {
+  const saved = localStorage.getItem('gcal_preset_calid3');
+  const sel = document.getElementById('calSelect3');
+  if (!saved || !sel) return;
+  Array.from(sel.options).forEach((o, i) => {
+    if (o.value === saved) { sel.selectedIndex = i; }
+  });
+  const lbl = document.getElementById('presetLabel3');
   if (lbl && sel.selectedIndex >= 0) {
     const txt = sel.options[sel.selectedIndex]?.text;
     if (sel.value) lbl.textContent = '📌 プリセット済: ' + txt;
@@ -4061,8 +4124,23 @@ function importSettings(file) {
 // ── Google API ────────────────────────────────────────
 async function gapi(url) {
   const r = await fetch(url, { headers: { Authorization: 'Bearer ' + accessToken } });
+  // 項目3-2: 401 はアクセストークンの期限切れ。呼び出し側で再認証を促せるよう印を付けて投げる
+  if (r.status === 401) { const e = new Error('AUTH_EXPIRED'); e.authExpired = true; throw e; }
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   return r.json();
+}
+// 項目3-2: トークン失効時のワンクリック再認証（成功後に自動で再取得）
+function reauth() {
+  if (!tokenClient) { setLog('log2', '先に「🔑 Googleでログイン」を行ってください', 'err'); return; }
+  setLog('log2', '🔑 再認証中…（ポップアップで許可してください）', '');
+  const orig = tokenClient.callback;
+  tokenClient.callback = (resp) => {
+    tokenClient.callback = orig;   // コールバックを元に戻す（初回認証フローを壊さない）
+    if (resp.error) { setLog('log2', '再認証に失敗しました: ' + resp.error, 'err'); return; }
+    accessToken = resp.access_token;
+    fetchEvents();                 // トークン更新後に自動で再取得
+  };
+  tokenClient.requestAccessToken();
 }
 async function gapiAll(baseUrl) {
   let items = [], pageToken = null;
@@ -4141,8 +4219,9 @@ async function onAuthenticated() {
         lbl.textContent = '📌 プリセット済: ' + sel.options[sel.selectedIndex].text;
       }
     }
-    // 2つ目カレンダーのプリセット復元
+    // 2つ目・3つ目カレンダーのプリセット復元
     loadPresetCal2();
+    loadPresetCal3();
   } catch(e) {}
   const today = new Date();
   const day = today.getDay();
@@ -4150,7 +4229,6 @@ async function onAuthenticated() {
   const monday = new Date(today);
   monday.setDate(today.getDate()+diff);
   document.getElementById('startDate').value = toDateStr(monday);
-  syncFilenameField();
 }
 function signOut() {
   if (accessToken) google.accounts.oauth2.revoke(accessToken);
@@ -4207,7 +4285,17 @@ async function fetchEvents() {
     unlock('card3'); stepDone(2);
     // 実績：APIモード使用（two_cal / three_cal は line 1375-1376 で解除済）
     recordModeUsage('api');
-  } catch(e) { setLog('log2', 'エラー: ' + e.message, 'err'); }
+  } catch(e) {
+    if (e.authExpired) {
+      // 項目3-2: 401（トークン期限切れ）は分かりやすい案内＋ワンクリック再認証ボタンを表示
+      const el = document.getElementById('log2');
+      el.className = 'log err';
+      el.innerHTML = '⚠ ログインの有効期限が切れました（アクセストークンの期限切れ）。'
+        + '<br><button class="btn btn-primary" onclick="reauth()" style="margin-top:8px;font-size:0.85rem;padding:6px 14px">🔑 再ログインして続行</button>';
+    } else {
+      setLog('log2', 'エラー: ' + e.message, 'err');
+    }
+  }
 }
 
 // ── ICS ──────────────────────────────────────────────
@@ -4357,7 +4445,6 @@ function processIcs() {
       const dow = today.getDay();
       today.setDate(today.getDate() + (dow===0 ? -6 : 1-dow));
       document.getElementById('startDate').value = toDateStr(today);
-      syncFilenameField();
     }
   } catch(e) { setLog('log1', 'ICS読み込みエラー: ' + e.message, 'err'); }
 }
@@ -4879,6 +4966,7 @@ async function exportExcel(opts = {}) {
       { key: '🚗', label: '移動なしの要確認（外出予定の直前に「移動」なし）' },
       { key: '✂️', label: 'タイトルの文言削除（ルール⑪）' },
       { key: '📍', label: '住所の整形（ルール⑪）' },
+      { key: '🧹', label: 'HTMLタグ・記号の整形（<br>等の除去）' },
       { key: '🔍', label: '詳細デバッグ情報（不具合調査用）' },
     ];
     let html = '';
@@ -5099,6 +5187,15 @@ async function exportExcel(opts = {}) {
 
       // C-2: 日付タグを早期に算出（全ログで使えるように）
       const dateTag = `${evStart.getMonth()+1}/${evStart.getDate()}(${DAYS_JA[evStart.getDay()]})`;
+
+      // 項目5-1/3-1: HTMLタグ・実体参照を除去（HTMLメール由来の <br> 等が Excel に literal 表示される問題対策）
+      const _rawConcat = (ev.summary||'') + (ev.location||'') + (ev.description||'');
+      ev.summary     = stripHtml(ev.summary || '');
+      ev.location    = stripHtml(ev.location || '');
+      ev.description = stripHtml(ev.description || '');
+      if (/<[a-z/!][^>]*>|&(?:[a-z]+|#\d+);/i.test(_rawConcat)) {
+        addProcLog('🧹', `${dateTag}　HTMLタグ/記号を整形（<br>→改行・タグ除去）`);
+      }
 
       const dow = evStart.getDay();
       if (dow >= 1 && dow <= 5 && holidayWeekdays.has(dow-1)) {
@@ -5494,6 +5591,7 @@ loadYoteiKws();
 loadOtOkKws();
 loadColorRules();
 loadSavedIcsUrls();
+loadFilenamePreset();
 loadDetailLogToggle();
 setupLogoSecret();
 // 初回利用日を起動時に記録（旧版は初回エクスポート時だったため days_30 が遅れていた）
@@ -5609,6 +5707,9 @@ window.processIcs    = processIcs;
 window.signOut       = signOut;
 window.setPresetCal  = setPresetCal;
 window.setPresetCal2 = setPresetCal2;
+window.setPresetCal3 = setPresetCal3;
+window.reauth        = reauth;
+window.saveFilenamePreset = saveFilenamePreset;
 window.saveClientId  = saveClientId;
 window.saveDocTitle  = saveDocTitle;
 window.toggleYoteiKwEdit = toggleYoteiKwEdit;
