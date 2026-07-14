@@ -836,7 +836,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 <div class="header">
   <div class="header-row">
     <h1>Googleカレンダー → Excel 変換<span class="header-suffix">（Webアプリ）</span></h1>
-    <div class="header-version" onclick="showChangelog()" title="クリックで更新履歴を表示">v1.9.0&nbsp;&nbsp;•&nbsp;&nbsp;2026-07-13</div>
+    <div class="header-version" onclick="showChangelog()" title="クリックで更新履歴を表示">v1.9.1&nbsp;&nbsp;•&nbsp;&nbsp;2026-07-14</div>
   </div>
   <p>Googleカレンダーの予定を週間スケジュール表（15分単位）としてExcelに出力します</p>
   <div id="dqStatusBar" style="display:none" onclick="showAchievementsModal()" title="クリックで「ぼうけんのきろく」を開く"></div>
@@ -3238,6 +3238,14 @@ function setupLogoSecret() {
 // ── 更新履歴 ──────
 const CHANGELOG = [
   {
+    version: '1.9.1', date: '2026-07-14',
+    changes: [
+      { type: 'fix', text: '同じ開始時刻で終了時刻が異なる2予定を左右セルに分けた際、両方が同じ内容になる不具合を修正（15分枠の予定が右列へ分割されたとき、左列の別予定を誤って上書きしていた）' },
+      { type: 'feature', text: '📋業務報告枠リストで、祝日はリストに表示しないように（土日は従来どおり除外）' },
+      { type: 'feature', text: 'Googleログインの有効期限切れ（401）時に、まず自動でサイレント更新を試み、成功すればポップアップ無しでそのまま再取得。できない場合のみ再認証ボタンを表示（再認証の手間を軽減）' },
+    ],
+  },
+  {
     version: '1.9.0', date: '2026-07-13',
     changes: [
       { type: 'fix', text: '予定のタイトル・場所・説明に混入したHTMLタグ（<br>等）や実体参照（&amp;等）を自動で整形。HTMLメール由来の予定で「<br>」がそのまま表示される問題を解消（処理ログに「🧹 HTMLタグ・記号の整形」を追加）' },
@@ -4129,18 +4137,40 @@ async function gapi(url) {
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   return r.json();
 }
-// 項目3-2: トークン失効時のワンクリック再認証（成功後に自動で再取得）
+// 項目3-2 / 09-1: トークン失効時の再認証。
+// 401検知時はまず「サイレント更新」を自動試行し、成功すればポップアップ無しで自動再取得。
+// 失敗（要操作・拒否・環境依存）時のみ手動ボタンを表示する（＝現状動作へフォールバック＝悪化しない）。
+function showReauthButton() {
+  const el = document.getElementById('log2');
+  if (!el) return;
+  el.className = 'log err';
+  el.innerHTML = '⚠ ログインの有効期限が切れました（アクセストークンの期限切れ）。'
+    + '<br><button class="btn btn-primary" onclick="reauth()" style="margin-top:8px;font-size:0.85rem;padding:6px 14px">🔑 再ログインして続行</button>';
+}
+function applyReauthResult(resp) {
+  if (resp && resp.access_token) { accessToken = resp.access_token; fetchEvents(); }  // 更新成功→自動再取得
+  else showReauthButton();
+}
+// 手動（ボタン）：ポップアップを出して確実に再認証
 function reauth() {
-  if (!tokenClient) { setLog('log2', '先に「🔑 Googleでログイン」を行ってください', 'err'); return; }
+  if (!tokenClient) { setLog('log2', 'STEP1で「🔑 Googleで認証する」を先に行ってください', 'err'); return; }
   setLog('log2', '🔑 再認証中…（ポップアップで許可してください）', '');
-  const orig = tokenClient.callback;
-  tokenClient.callback = (resp) => {
-    tokenClient.callback = orig;   // コールバックを元に戻す（初回認証フローを壊さない）
-    if (resp.error) { setLog('log2', '再認証に失敗しました: ' + resp.error, 'err'); return; }
-    accessToken = resp.access_token;
-    fetchEvents();                 // トークン更新後に自動で再取得
-  };
-  tokenClient.requestAccessToken();
+  tokenClient.callback = applyReauthResult;
+  tokenClient.error_callback = showReauthButton;
+  tokenClient.requestAccessToken({});
+}
+// 401時：まずサイレント更新を試みる
+function trySilentReauth() {
+  if (!tokenClient) { showReauthButton(); return; }
+  setLog('log2', '🔑 ログインの有効期限が切れたため自動更新しています…', '');
+  tokenClient.callback = applyReauthResult;
+  tokenClient.error_callback = showReauthButton;         // サイレント不可→手動ボタン
+  try { tokenClient.requestAccessToken({ prompt: '' }); } catch (e) { showReauthButton(); }
+  // 保険：数秒たっても成否が返らない環境では手動ボタンへ（成功が遅れて返っても token は破棄しない）
+  setTimeout(() => {
+    const el = document.getElementById('log2');
+    if (el && el.textContent.includes('自動更新しています')) showReauthButton();
+  }, 3000);
 }
 async function gapiAll(baseUrl) {
   let items = [], pageToken = null;
@@ -4287,11 +4317,8 @@ async function fetchEvents() {
     recordModeUsage('api');
   } catch(e) {
     if (e.authExpired) {
-      // 項目3-2: 401（トークン期限切れ）は分かりやすい案内＋ワンクリック再認証ボタンを表示
-      const el = document.getElementById('log2');
-      el.className = 'log err';
-      el.innerHTML = '⚠ ログインの有効期限が切れました（アクセストークンの期限切れ）。'
-        + '<br><button class="btn btn-primary" onclick="reauth()" style="margin-top:8px;font-size:0.85rem;padding:6px 14px">🔑 再ログインして続行</button>';
+      // 項目3-2 / 09-1: 401（トークン期限切れ）→ まずサイレント自動更新を試み、不可なら手動ボタン
+      trySilentReauth();
     } else {
       setLog('log2', 'エラー: ' + e.message, 'err');
     }
@@ -4826,6 +4853,8 @@ function generateGyomuhouEntries() {
     const dow = cursor.getDay();
     if (dow >= 1 && dow <= 5) { // 平日のみ
       const key = `${cursor.getFullYear()}-${String(cursor.getMonth()+1).padStart(2,'0')}-${String(cursor.getDate()).padStart(2,'0')}`;
+      // 項目09-2: 祝日はリストから除外（「業務報告枠なし」も出さない）。土日は上の平日判定で既に除外済み
+      if (icsHolidays && icsHolidays.has(key)) { cursor.setDate(cursor.getDate() + 1); continue; }
       const evs = byDate.get(key) || [];
       const m = cursor.getMonth() + 1, d = cursor.getDate();
       const dowJa = DAYS_JA_LOCAL[dow];
@@ -5380,11 +5409,6 @@ async function exportExcel(opts = {}) {
           }
         }
         const cellVal = lines.join(spanRows > 1 ? '\n' : ' ');
-        // B-3（v1.7.1）: 15分スロット（spanRows=1）でメイン+時刻が空白結合された1行表示のセルを記録
-        // → 行高均等化の後で、行が拡張されていれば改行に置換する
-        if (spanRows === 1 && lines.length >= 2) {
-          shortSlotCellsAll.set(`${row}_${col}`, lines.slice());
-        }
         const key = `${row}_${col}`;
         const calcFz = v => { const m=Math.max(...v.split('\n').map(l=>[...l].length)); return m>22?11:null; };  // 12pt基準・密なら11pt（閾値は不変）
         const visualLineCount = v => v.split('\n').reduce((acc, l) => acc + Math.max(1, Math.ceil([...l].length / 14)), 0);
@@ -5438,6 +5462,10 @@ async function exportExcel(opts = {}) {
           const rXf = is1300start ? (EV_R13[xf.R] ?? xf.R) : (EV_NB[xf.R] ?? xf.R);
           setC(row, col,   cellVal, lXf, evFc, fz, evEmph);
           setC(row, col+1, null,    rXf, null);
+          // B-3（v1.7.1）: 15分スロット（spanRows=1・空白結合）で「左列に配置した」セルのみ記録。
+          // 行が後で拡張されたら改行結合へ置換する。※分割で右列へ回ったケースは記録しない
+          //   （記録すると左列＝別イベントのセルを誤って上書きするため。項目08バグ修正）
+          if (spanRows === 1 && lines.length >= 2) shortSlotCellsAll.set(key, lines.slice());
           const otExtension = endMin > EH*60 ? Math.min(Math.ceil((endMin - EH*60) / 15), OT) : 0;
           mergeMap.set(key, merges.length);
           merges.push({r:row, c:col, rs:spanRows + otExtension, cs:2});
