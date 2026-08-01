@@ -836,7 +836,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 <div class="header">
   <div class="header-row">
     <h1>Googleカレンダー → Excel 変換<span class="header-suffix">（Webアプリ）</span></h1>
-    <div class="header-version" onclick="showChangelog()" title="クリックで更新履歴を表示">v1.9.1&nbsp;&nbsp;•&nbsp;&nbsp;2026-07-14</div>
+    <div class="header-version" onclick="showChangelog()" title="クリックで更新履歴を表示">v1.9.3&nbsp;&nbsp;•&nbsp;&nbsp;2026-08-01</div>
   </div>
   <p>Googleカレンダーの予定を週間スケジュール表（15分単位）としてExcelに出力します</p>
   <div id="dqStatusBar" style="display:none" onclick="showAchievementsModal()" title="クリックで「ぼうけんのきろく」を開く"></div>
@@ -856,7 +856,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
     <button class="btn btn-primary" id="tabApi" onclick="switchTab('api')" style="flex:1;min-width:140px">🔑 Google API</button>
     <button class="btn btn-secondary" id="tabIcs" onclick="switchTab('ics')" style="flex:1;min-width:140px">📁 .icsファイル</button>
-    <button class="btn btn-secondary" id="tabUrl" onclick="switchTab('url')" style="flex:1;min-width:140px">🌐 ICS URL</button>
+    <button class="btn btn-secondary" id="tabUrl" onclick="switchTab('url')" style="flex:1;min-width:140px;opacity:0.5" title="職場環境ではCORS制限により利用できません">🌐 ICS URL</button>
   </div>
 
   <!-- API パネル -->
@@ -908,6 +908,9 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 
   <!-- ICS URL パネル -->
   <div id="panelUrl" style="display:none">
+    <div style="margin-bottom:14px;padding:12px 14px;background:rgba(255,165,0,0.1);border-left:3px solid #ffa500;border-radius:4px;font-size:0.85rem;line-height:1.6;color:var(--text)">
+      ⚠ <strong>職場環境では利用できません。</strong>このモードはブラウザの <strong>CORS 制限</strong>の影響を受け、Google のカレンダーURL等では読み込みがブロックされます（多くの環境で失敗します）。職場では <strong>🔑 Google API</strong> または <strong>📁 .icsファイル</strong> モードをご利用ください。
+    </div>
     <div class="auth-info">
       Google カレンダーの<strong>公開URL（または iCal 形式URL）</strong>を直接指定して取得します。<br>
       <strong>API設定不要</strong>で、bundle版（file://）でも動作する想定（ただし CORS の影響を受けます）。<br><br>
@@ -1145,7 +1148,8 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
         <button class="btn btn-secondary" id="driverEditBtn" onclick="toggleDriverEdit()" style="font-size:0.78rem;padding:6px 12px">✏️ 編集する</button>
       </div>
       <div id="driverReadView" style="margin-bottom:12px"></div>
-      <p class="hint" style="margin-top:-6px;margin-bottom:12px">※ 全週同一パターンで出力。 運転手のローテーション変更時及び土日は手動で修正してください。</p>
+      <p class="hint" style="margin-top:-6px;margin-bottom:12px">※ 全週同一パターンで出力。土日は手動で修正してください。<br>
+      特定の日だけ変えたいときは<strong>終日予定</strong>で指定できます：<code>田中運転手</code>（名前を変更）／<code>運転手なし</code>（その日は非表示）／<code>田中運転手※対応なし</code>（※以降をそのまま表示）</p>
       <div id="driverEditArea" style="display:none">
     <div style="display:flex;gap:10px;margin-bottom:10px">
       <div style="flex:1;display:flex;align-items:center;gap:6px">
@@ -1245,6 +1249,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
             <li>場所欄の自動補完（「面会」「来客」→応接室、「幹部会」→第二応接室のみ）</li>
             <li>プライバシー配慮の自動変換（「○○さん／氏／様」→「来客あり」、特定キーワード→「予定あり」）</li>
             <li>終日予定の「○○運転手」「○○運転手対応」で運転手名を当日のみ上書き</li>
+            <li>終日予定の「○○運転手※<em>自由文</em>」で運転手欄に任意の文言を表示／「運転手なし」で当日のみ非表示</li>
             <li>祝日・年末年始閉庁日（12/29〜1/3）は運転手非表示</li>
             <li>印刷時は<strong>1週=1ページ</strong>に自動最適化</li>
             <li>処理ログで除外・変換・誤植の可能性を一覧表示（詳細デバッグも切替可）</li>
@@ -1389,6 +1394,8 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
           <ul>
             <li>祝日・年末年始閉庁日（12/29〜1/3）に該当する曜日は<strong>運転手名を非表示</strong></li>
             <li>カレンダーに「<code>○○運転手</code>」「<code>○○運転手対応</code>」という<strong>終日予定</strong>を入れると、その日の運転手名を「○○」で上書き表示（一時的なローテーション変更に便利）</li>
+            <li>終日予定に「<code>運転手なし</code>」（<code>運転手不要</code>も可）を入れると、その日は<strong>運転手欄を非表示</strong>（上司の休暇等で運転手対応が不要な日に）</li>
+            <li>終日予定に「<code>○○運転手※対応なし</code>」のように<strong>※</strong>を付けると、<strong>※以降の文言がそのまま運転手欄に表示</strong>されます（例：<code>田中運転手※対応なし</code> →「対応なし」と表示）。※の後を空にすると非表示になります</li>
           </ul>
         </div>
       </details>
@@ -1542,8 +1549,9 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
           <p class="faq-q">Q12. 「（三役）」付き予定の時間情報が出ない</p>
           <p class="faq-a">A. タイトル末尾に「（三役）」を含めた上で、説明欄に「<code>知事 10:00-10:30</code>」「<code>副知事 10:30-11:00</code>」のような形式で時間を記載してください。セル末尾に「※知事 10:00-10:30 / 副知事 10:30-11:00」が追記されます。</p>
 
-          <p class="faq-q">Q13. 終日予定で運転手を上書きするには？</p>
-          <p class="faq-a">A. Googleカレンダーに「<code>○○運転手</code>」または「<code>○○運転手対応</code>」というタイトルで終日予定を入れてください。その日の運転手名が「○○」に上書きされます。</p>
+          <p class="faq-q">Q13. 終日予定で運転手を上書き・非表示にするには？</p>
+          <p class="faq-a">A. Googleカレンダーに「<code>○○運転手</code>」または「<code>○○運転手対応</code>」というタイトルで終日予定を入れてください。その日の運転手名が「○○」に上書きされます。<br>
+          また「<code>運転手なし</code>」と入れるとその日は運転手欄が<strong>非表示</strong>になり、「<code>田中運転手※対応なし</code>」のように<strong>※</strong>を付けると<strong>※以降の文言がそのまま表示</strong>されます（上司の休暇等で運転手対応が不要な日に）。</p>
 
           <p class="faq-q">Q14. なぜか応接室と表示されない</p>
           <p class="faq-a">A. v1.5.1 から、場所自動補完は<strong>「面会」「来客」（→応接室）と「幹部会」（→第二応接室）のみ</strong>に限定されました。他の予定で場所欄が空のまま表示したくない場合は、カレンダー側で場所を入力してください。</p>
@@ -1612,6 +1620,8 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
           <p class="faq-a">
             タイトル：<code>田中運転手</code> または <code>田中運転手対応</code>（終日予定として登録）<br>
             →出力：その日の運転手名が「田中」に上書きされる<br>
+            タイトル：<code>運転手なし</code> →出力：その日の運転手欄が空になる（休暇等で対応不要な日）<br>
+            タイトル：<code>田中運転手※対応なし</code> →出力：運転手欄に「対応なし」と表示（※以降がそのまま出る）<br>
             ※通常は曜日ごとの固定割当ですが、終日予定でその日だけ変更可能
           </p>
 
@@ -1660,6 +1670,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
             <li>非公開にしたい予定（プライベート用通院など）→ 「予定あり」変換キーワードに登録すれば自動的に「予定あり」と表示される</li>
             <li>17時以降の懇親会など → 「時間外OK扱いキーワード」に登録すれば「📋 要確認」警告が抑止される</li>
             <li>運転手を一時的に変更したい日 → その日に終日予定で <code>○○運転手</code> または <code>○○運転手対応</code> を入れる</li>
+            <li>上司の休暇等で運転手対応が不要な日 → その日に終日予定で <code>運転手なし</code> を入れる（<code>○○運転手※対応なし</code> のように書けば「対応なし」と表示できる）</li>
             <li>祝日・年末年始（12/29〜1/3）の運転手表示 → 自動的に非表示。手動の終日予定で上書き可能</li>
             <li>場所欄を空にしておきたい予定 → タイトルに「面会」「来客」「幹部会」を入れない（v1.5.1 以降、これら以外は補完なし）</li>
           </ul>
@@ -3238,6 +3249,18 @@ function setupLogoSecret() {
 // ── 更新履歴 ──────
 const CHANGELOG = [
   {
+    version: '1.9.3', date: '2026-08-01',
+    changes: [
+      { type: 'feature', text: '運転手欄を日単位で調整できるように拡張。終日予定に「運転手なし」（「運転手不要」も可）と入れるとその日は運転手欄を非表示、「田中運転手※対応なし」のように※を付けると※以降の文言をそのまま表示します（上司の休暇等で運転手対応が不要な日に、出力後の手修正が不要になります）' },
+    ],
+  },
+  {
+    version: '1.9.2', date: '2026-07-15',
+    changes: [
+      { type: 'feature', text: 'ICS URLモードは多くの環境でCORS制限により失敗するため、タブを薄く表示し、選択時にその旨の注意書きを表示するように' },
+    ],
+  },
+  {
     version: '1.9.1', date: '2026-07-14',
     changes: [
       { type: 'fix', text: '同じ開始時刻で終了時刻が異なる2予定を左右セルに分けた際、両方が同じ内容になる不具合を修正（15分枠の予定が右列へ分割されたとき、左列の別予定を誤って上書きしていた）' },
@@ -4769,6 +4792,27 @@ function extractOrgUnits(desc) {
   }
   return units;
 }
+// 終日予定のタイトルから「その日の運転手欄」の指定を読み取る（v1.9.3）
+//   「○○運転手」「○○運転手対応」        → 名前を差し替え         {type:'name'}
+//   「○○運転手※対応なし」                → ※以降をそのまま表示    {type:'text'}
+//   「○○運転手※」（※以降が空）／「運転手なし」「運転手不要」 → 非表示 {type:'hide'}
+// ※判定は「運転手」を含む終日予定に限定するため、他の終日予定を誤って拾わない。
+function parseDriverDirective(title) {
+  const sum = (title || '').trim();
+  if (!sum) return null;
+  // ※以降を運転手名の代わりに表示（空なら非表示）。名前部分は省略可
+  const mNote = sum.match(/^(.*?)\s*運転手(?:対応)?\s*※\s*([\s\S]*)$/);
+  if (mNote) {
+    const text = mNote[2].trim();
+    return text ? { type: 'text', text } : { type: 'hide' };
+  }
+  // 「運転手なし」「運転手無し」「運転手不要」→ その日は非表示（上司の休暇等）
+  if (/運転手\s*(?:なし|無し|不要)/.test(sum)) return { type: 'hide' };
+  // 従来どおりの名前上書き
+  const mName = sum.match(/^(.+?)\s*運転手(?:対応)?\s*$/);
+  if (mName && mName[1].trim()) return { type: 'name', name: mName[1].trim() };
+  return null;
+}
 function extractAssemblyAgenda(desc) {
   if (!desc) return [];
   const items = [];
@@ -5068,9 +5112,12 @@ async function exportExcel(opts = {}) {
   // ただし運転手指定パターン（「○○運転手」「○○運転手対応」）の終日イベントは別扱い
   fetchedEvents.filter(ev => !ev.start || !ev.start.dateTime).forEach(ev => {
     const sum = (ev.summary || '').trim();
-    const isDriverOverride = /^.+?\s*運転手(?:対応)?\s*$/.test(sum);
-    if (isDriverOverride) {
-      addProcLog('🔄', `運転手指定（終日）: 「${sum}」 → 当日の運転手表示に反映`);
+    const dir = parseDriverDirective(sum);
+    if (dir) {
+      const how = dir.type === 'hide' ? '当日の運転手欄を非表示'
+                : dir.type === 'text' ? `運転手欄に「${dir.text}」を表示`
+                :                        `当日の運転手を「${dir.name}」に変更`;
+      addProcLog('🔄', `運転手指定（終日）: 「${sum}」 → ${how}`);
     } else {
       addProcLog('📅', `除外（終日）: 「${sum || '(無題)'}」`);
     }
@@ -5123,8 +5170,10 @@ async function exportExcel(opts = {}) {
       const mo = dt.getMonth() + 1, da = dt.getDate();
       if ((mo === 12 && da >= 29) || (mo === 1 && da <= 3)) closedWeekdays.add(d);
     }
-    // A-1: 終日予定でその日の運転手名を上書きする辞書を構築
-    const overrideDriver = {};
+    // A-1: 終日予定でその日の運転手欄を上書きする辞書を構築（名前差し替え／自由文／非表示）
+    const overrideDriver = {};       // 名前の差し替え（「○○運転手」）
+    const overrideDriverText = {};   // ※以降の自由文（そのまま表示）
+    const noDriverDays = new Set();  // その日は運転手欄を出さない（上司の休暇等）
     fetchedEvents.forEach(ev => {
       if (ev.start?.dateTime) return; // 終日のみ対象
       const ymd = ev.start?.date;
@@ -5136,21 +5185,27 @@ async function exportExcel(opts = {}) {
         if (evDt.getFullYear() === dt.getFullYear() &&
             evDt.getMonth() === dt.getMonth() &&
             evDt.getDate() === dt.getDate()) {
-          const sum = (ev.summary || '').trim();
-          // 「○○運転手対応」「○○運転手」を検出して名前部分を抽出
-          const m = sum.match(/^(.+?)\s*運転手(?:対応)?\s*$/);
-          if (m && m[1]) {
-            overrideDriver[d] = m[1].trim();
-          }
+          const dir = parseDriverDirective(ev.summary);
+          if (!dir) continue;
+          if (dir.type === 'hide')      noDriverDays.add(d);
+          else if (dir.type === 'text') overrideDriverText[d] = dir.text;
+          else                          overrideDriver[d] = dir.name;
         }
       }
     });
     for (let d = 0; d < 5; d++) {
-      const name = overrideDriver[d] || driverDays[d];
-      if (!name) continue;
       // 祝日 or 閉庁日は非表示
       if (holidayWeekdays.has(d) || closedWeekdays.has(d)) continue;
-      setC(ro+3, DCOLS[d], '*' + name + '運転手', XF.cIn);
+      // 「運転手なし」指定の日は非表示（他の指定より優先）
+      if (noDriverDays.has(d)) continue;
+      // ※以降の自由文はそのまま表示。指定がなければ従来どおり「*名前運転手」
+      let label = overrideDriverText[d];
+      if (!label) {
+        const name = overrideDriver[d] || driverDays[d];
+        if (!name) continue;
+        label = '*' + name + '運転手';
+      }
+      setC(ro+3, DCOLS[d], label, XF.cIn);
       setC(ro+3, DCOLS[d]+1, null, XF.dIn);
       merges.push({r:ro+3, c:DCOLS[d], rs:1, cs:2});
     }
