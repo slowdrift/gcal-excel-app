@@ -836,7 +836,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 <div class="header">
   <div class="header-row">
     <h1>Googleカレンダー → Excel 変換<span class="header-suffix">（Webアプリ）</span></h1>
-    <div class="header-version" onclick="showChangelog()" title="クリックで更新履歴を表示">v1.9.3&nbsp;&nbsp;•&nbsp;&nbsp;2026-08-01</div>
+    <div class="header-version" onclick="showChangelog()" title="クリックで更新履歴を表示">v1.10.1&nbsp;&nbsp;•&nbsp;&nbsp;2026-08-08</div>
   </div>
   <p>Googleカレンダーの予定を週間スケジュール表（15分単位）としてExcelに出力します</p>
   <div id="dqStatusBar" style="display:none" onclick="showAchievementsModal()" title="クリックで「ぼうけんのきろく」を開く"></div>
@@ -1118,14 +1118,25 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   </details>
 
   <details class="config-section">
-    <summary>🔒 「予定あり」変換キーワード</summary>
+    <summary>🔒 タイトル変換ルール（プライバシー配慮）</summary>
     <div class="config-section-body">
       <div class="config-section-head">
-        <button class="btn btn-secondary" id="yoteiKwEditBtn" onclick="toggleYoteiKwEdit()" style="font-size:0.78rem;padding:6px 12px">✏️ 編集する</button>
+        <button class="btn btn-secondary" id="titleRuleEditBtn" onclick="toggleTitleRuleEdit()" style="font-size:0.78rem;padding:6px 12px">✏️ 編集する</button>
       </div>
-      <p class="hint" style="margin-top:0;margin-bottom:8px">※ ここに登録したキーワードを含むイベントは、タイトルが「予定あり」に置換されます（プライバシー配慮用）</p>
-      <div id="yoteiKwReadView" style="margin-bottom:8px"></div>
-      <div id="yoteiKwEditView" style="display:none;margin-bottom:8px"></div>
+      <p class="hint" style="margin-top:0;margin-bottom:8px">※ キーワードを含むイベントのタイトルを、指定した文言に置き換えます（例：「ブロック」→「予定あり」）。<strong>上から順に判定</strong>し、最初に一致した1件だけを適用します。<br>
+      適用範囲の「<strong>人名がある予定だけ</strong>」は、タイトルに「○○さん・○○氏・○○様」が入っている予定にだけ働きます（例：「田中様訪問」は変換、「工場訪問」はそのまま）。</p>
+      <div id="titleRuleReadView" style="margin-bottom:8px"></div>
+      <div id="titleRuleEditView" style="display:none;margin-bottom:8px"></div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:0.82rem;color:var(--text-muted);font-weight:400;margin-top:10px">
+        <input type="checkbox" id="hitoConvertChk" onchange="saveHitoConvert()" style="width:auto;margin:0" checked>
+        どのルールにも一致しないとき、人名（○○さん／氏／様）を「来客あり」に変換する
+      </label>
+      <div style="margin-top:12px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px">
+        <label for="titleRuleTestInput" style="display:block;font-size:0.82rem;color:var(--text);margin-bottom:4px">🧪 変換テスト（カレンダーのタイトルを入れると、出力される文言が分かります）</label>
+        <input type="text" id="titleRuleTestInput" placeholder="例：田中様訪問" oninput="runTitleRuleTest()"
+          style="width:100%;padding:6px 10px;font-size:0.9rem;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);margin-bottom:6px">
+        <div id="titleRuleTestResult" style="font-size:0.85rem;line-height:1.6"></div>
+      </div>
     </div>
   </details>
 
@@ -1350,7 +1361,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 
           <h4>Step 3：ルール設定と Excel 出力</h4>
           <ol>
-            <li>必要に応じて <strong>資料タイトル</strong>・<strong>色ルール</strong>・<strong>変換キーワード</strong>・<strong>運転手</strong> 等を調整（各セクションは折りたたみ式）</li>
+            <li>必要に応じて <strong>資料タイトル</strong>・<strong>色ルール</strong>・<strong>タイトル変換ルール</strong>・<strong>運転手</strong> 等を調整（各セクションは折りたたみ式）</li>
             <li>「<strong>👁 プレビュー</strong>」で出力イメージを事前確認（推奨）</li>
             <li>「<strong>📋 業務報告枠リスト</strong>」で業務報告イベントの時間枠一覧をテキストでコピー（任意）</li>
             <li>「<strong>⬇ Excelをダウンロード</strong>」で保存</li>
@@ -1382,8 +1393,16 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
           <p><strong>自由設定：</strong>「✏️ ルールを編集する」から、キーワード・背景色・文字色・強調を追加・変更・削除できます。上から順に優先されます。どのルールにも一致しない予定はデフォルト色（初期値：パステル青）になります。</p>
           <p class="note">※「業務報告」「本会議・代表質問・一般質問」の説明欄から①②③…を抽出する機能は、色とは独立して動作します。</p>
 
-          <h4>🔒 「予定あり」変換キーワード</h4>
-          <p>プライバシー配慮のため、特定キーワードを含むタイトルを「予定あり」に置換します。配布用資料でセンシティブな予定名を隠す用途に使えます。</p>
+          <h4>🔒 タイトル変換ルール</h4>
+          <p>プライバシー配慮のため、特定キーワードを含むタイトルを別の文言に置換します。配布用資料でセンシティブな予定名を隠す用途に使えます。</p>
+          <ul>
+            <li>各ルールは「<strong>キーワード → 表示名</strong>」の形。表示名は自由に決められます（例：「ブロック」→「予定あり」、「訪問」→「訪問あり」）</li>
+            <li><strong>上から順に判定</strong>し、最初に一致した1件だけを適用します。↑↓ボタンで優先順位を変更できます</li>
+            <li><strong>適用範囲</strong>：「すべての予定」か「人名がある予定だけ」を選べます。「人名がある予定だけ」は、タイトルに「○○さん」「○○氏」「○○様」が入っている予定にだけ適用する設定です。例えば「訪問」ルールをこれにしておくと、「田中様訪問」は「訪問あり」になり、「○○工場訪問」はそのまま残ります</li>
+            <li><strong>場所なしは注記</strong>：場所が未設定のとき「※場所・送迎等確認中」を付けます</li>
+            <li>どのルールにも一致しない場合、人名を含む予定は「来客あり」に変換されます（チェックでON/OFF可）</li>
+            <li><strong>🧪 変換テスト</strong>：カレンダーのタイトルを入力すると、実際に出力される文言と、どのルールが効いたかがその場で表示されます。ルールを追加・並び替えしたあとの確認に使えます</li>
+          </ul>
 
           <h4>🌙 時間外OK扱いキーワード</h4>
           <p>17時以降のイベントは通常「📋 要確認」警告が処理ログに記録されます。ここに登録したキーワード（年度・大会・総会・新年会など）を含む予定は警告を抑止します。</p>
@@ -1441,7 +1460,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
           <ul>
             <li>資料タイトル</li>
             <li>色ルール（デフォルト色含む）</li>
-            <li>「予定あり」変換キーワード</li>
+            <li>タイトル変換ルール</li>
             <li>時間外OK扱いキーワード</li>
             <li>担当運転手（A・B 名と曜日割当）</li>
             <li>プリセットカレンダー（メイン・2つ目）</li>
@@ -1544,7 +1563,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
           <p class="faq-a">A. 最新の Chrome / Edge / Firefox / Safari で動作確認しています。Internet Explorer は非対応です。</p>
 
           <p class="faq-q">Q11. タイトルに「議員」を含む予定の警告が出る</p>
-          <p class="faq-a">A. 「議員」を含む予定は処理ログに「📋 議員含む・要確認」と通知されます。プライバシー配慮のため、必要に応じて「予定あり」変換キーワードに追加してください。</p>
+          <p class="faq-a">A. 「議員」を含む予定は処理ログに「📋 議員含む・要確認」と通知されます。プライバシー配慮のため、必要に応じて「タイトル変換ルール」に追加してください。</p>
 
           <p class="faq-q">Q12. 「（三役）」付き予定の時間情報が出ない</p>
           <p class="faq-a">A. タイトル末尾に「（三役）」を含めた上で、説明欄に「<code>知事 10:00-10:30</code>」「<code>副知事 10:30-11:00</code>」のような形式で時間を記載してください。セル末尾に「※知事 10:00-10:30 / 副知事 10:30-11:00」が追記されます。</p>
@@ -1629,7 +1648,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
           <p class="faq-a">
             タイトル例：<code>○○議員 面会</code><br>
             →処理ログに「📋 議員含む・要確認」と表示される<br>
-            プライバシー配慮で「予定あり」変換したい場合は、設定の「🔒 「予定あり」変換キーワード」に「議員」を追加するか、個別キーワード（議員名等）を登録
+            プライバシー配慮で「予定あり」変換したい場合は、設定の「🔒 タイトル変換ルール」に「議員 → 予定あり」を追加するか、個別キーワード（議員名等）を登録
           </p>
 
           <h4>⚠️ 間違いやすい入力例</h4>
@@ -1667,7 +1686,8 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 
           <h4>💡 ちょっとした工夫</h4>
           <ul>
-            <li>非公開にしたい予定（プライベート用通院など）→ 「予定あり」変換キーワードに登録すれば自動的に「予定あり」と表示される</li>
+            <li>非公開にしたい予定（プライベート用通院など）→ 「タイトル変換ルール」に登録すれば自動的に「予定あり」等に置き換わる</li>
+            <li>「○○様訪問」が「来客あり」になってしまう → 既定の「訪問 → 訪問あり（人名がある予定だけ）」ルールで「訪問あり」と表示される。迷ったら「🧪 変換テスト」に実際のタイトルを入れて確認できる</li>
             <li>17時以降の懇親会など → 「時間外OK扱いキーワード」に登録すれば「📋 要確認」警告が抑止される</li>
             <li>運転手を一時的に変更したい日 → その日に終日予定で <code>○○運転手</code> または <code>○○運転手対応</code> を入れる</li>
             <li>上司の休暇等で運転手対応が不要な日 → その日に終日予定で <code>運転手なし</code> を入れる（<code>○○運転手※対応なし</code> のように書けば「対応なし」と表示できる）</li>
@@ -2364,7 +2384,7 @@ const ACHIEVEMENTS = [
   { id: 'config_master',   emoji: '🛠', name: '設定の達人',            desc: '設定の エクスポート/インポートを ためした',                     secret: false },
   { id: 'detail_explorer', emoji: '🔍', name: '徹底調査員',            desc: 'しょうさい ひょうじを ON にした',                                 secret: true  },
   { id: 'name_value',      emoji: '✒️', name: 'わが名を刻む者',        desc: '資料タイトルを すきな名前に変えた',                              secret: true  },
-  { id: 'yotei_kw_added',  emoji: '🔐', name: '秘密の守護者',          desc: '「予定あり」変換キーワードを ついかした',                       secret: true  },
+  { id: 'yotei_kw_added',  emoji: '🔐', name: '秘密の守護者',          desc: 'タイトル変換ルールを ついかした',                                 secret: true  },
   { id: 'default_color',   emoji: '🎨', name: 'わが色彩',              desc: 'デフォルト色を 変更した',                                            secret: true  },
   { id: 'color_sense',     emoji: '🖌', name: '色彩の番人',             desc: '色ルールを 追加または編集した',                                     secret: true  },
   { id: 'driver_set',      emoji: '🚗', name: 'ハンドル裁き',           desc: '運転手の名前を カスタマイズした',                                  secret: true  },
@@ -2961,7 +2981,7 @@ function checkAchievementsOnExport(eventsForExport, ctx = {}) {
     const mwName = (document.getElementById('driverNameMW')?.value || '').trim();
     const tfName = (document.getElementById('driverNameTF')?.value || '').trim();
     if ((mwName && mwName !== '運転手A') || (tfName && tfName !== '運転手B')) unlockAchievement('driver_set');
-    if (Array.isArray(CONVERT_TO_YOTEI) && CONVERT_TO_YOTEI.filter(k=>k).length > DEFAULT_CONVERT_TO_YOTEI.length) unlockAchievement('yotei_kw_added');
+    if (Array.isArray(titleRules) && titleRules.filter(r=>r.keyword).length > DEFAULT_TITLE_RULES.length) unlockAchievement('yotei_kw_added');
     if (Array.isArray(colorRules) && colorRules.length !== 3) unlockAchievement('color_sense');
 
     // 30日継続
@@ -3249,6 +3269,21 @@ function setupLogoSecret() {
 // ── 更新履歴 ──────
 const CHANGELOG = [
   {
+    version: '1.10.1', date: '2026-08-08',
+    changes: [
+      { type: 'feature', text: 'タイトル変換ルールを分かりやすく改善。「人名のみ」チェックボックスを「すべての予定／人名がある予定だけ」の選択式に変更し、行が「〇〇を含む・△△だけ → □□と表示」と文章として読めるようにしました' },
+      { type: 'feature', text: '🧪 変換テスト欄を追加。カレンダーのタイトルを入力すると、実際に出力される文言と、どのルールが効いたか（人名の一致有無まで）がその場で分かります' },
+    ],
+  },
+  {
+    version: '1.10.0', date: '2026-08-08',
+    changes: [
+      { type: 'feature', text: 'タイトルの自動変換をUIで編集できる「タイトル変換ルール」に刷新。「キーワード → 表示名」を自由に設定でき（例：「訪問」→「訪問あり」）、↑↓で判定の優先順位も変更できます。従来の「予定あり」変換キーワードはこの表に統合され、既存の設定は自動で引き継がれます' },
+      { type: 'fix', text: '「○○様訪問」のように自分が訪問する予定が「来客あり」と逆の意味で表示される問題に対応。既定で「訪問 →「訪問あり」（人名を含むときだけ）」ルールを追加しました。「○○工場訪問」のような人名を含まない予定はそのまま表示されます' },
+      { type: 'feature', text: 'ルールごとに「人名のみ」（人名を含む予定だけに適用）と「注記」（場所なしのとき※場所・送迎等確認中を付ける）を選べるように。人名→「来客あり」変換のON/OFFも設定できます' },
+    ],
+  },
+  {
     version: '1.9.3', date: '2026-08-01',
     changes: [
       { type: 'feature', text: '運転手欄を日単位で調整できるように拡張。終日予定に「運転手なし」（「運転手不要」も可）と入れるとその日は運転手欄を非表示、「田中運転手※対応なし」のように※を付けると※以降の文言をそのまま表示します（上司の休暇等で運転手対応が不要な日に、出力後の手修正が不要になります）' },
@@ -3483,15 +3518,28 @@ function showChangelog() {
 
 // ── 出力処理設定 ──────
 const OESETSU_AUTO = true;       // 場所なし予定に「応接室」を自動補完
-const CONVERT_HITO = true;       // 「○○さん」「○○氏」パターンも変換
+
+// 人名パターン（1〜5文字＋さん/氏/様）。組み込みルール「→ 来客あり」で使用
+const HITO_RE = /[一-龥ぁ-んァ-ヶ]{1,5}(?:さん|氏|様)/;
+let CONVERT_HITO = true;         // 人名 →「来客あり」変換の ON/OFF（UIで切替）
+
+// タイトル変換ルール（UI編集可能・localStorage連携）
+//   keyword : タイトルに含まれていれば一致
+//   label   : 置き換えて表示する文言（例「予定あり」「訪問あり」）
+//   hitoOnly: true なら「人名（○○様等）を含む予定」にだけ適用（無関係な予定を潰さないため）
+//   note    : true なら場所未設定のとき「　※場所・送迎等確認中」を付ける
+// 上から順に判定し、最初に一致した1件を適用。どれにも一致しなければ人名→「来客あり」。
+const DEFAULT_TITLE_RULES = [
+  { keyword: 'ブロック', label: '予定あり', hitoOnly: false, note: false },
+  { keyword: '訪問',     label: '訪問あり', hitoOnly: true,  note: false },
+];
+let titleRules = DEFAULT_TITLE_RULES.map(r => ({ ...r }));
 
 // UI編集可能なキーワードリスト（localStorage連携）
-const DEFAULT_CONVERT_TO_YOTEI = ['ブロック'];
 const DEFAULT_OT_OK_KEYWORDS = [
   '年度','大会','総会','交流会','歓迎会','歓送迎会',
   '祝賀会','懇談会','賀詞交歓会','新年会','忘年会','懇親会','会議',
 ];
-let CONVERT_TO_YOTEI = [...DEFAULT_CONVERT_TO_YOTEI];
 let OT_OK_KEYWORDS = [...DEFAULT_OT_OK_KEYWORDS];
 
 let presetCalId = 'primary';
@@ -3778,9 +3826,13 @@ function renderRulesPreview() {
   html += '<li style="color:var(--text-muted);font-size:0.78rem">※上記以外は補完せず、場所欄は空のまま出力されます（誤補完防止）</li>';
   html += '</ul>';
 
-  html += '<div class="rpanel-cat">④ タイトルの自動変換（プライバシー配慮） <span style="font-size:0.78rem;color:var(--text-muted)">→ 処理ログ 🔄</span></div><ul class="rpanel-ul">';
+  html += '<div class="rpanel-cat">④ タイトルの自動変換（プライバシー配慮・上から順に判定） <span style="font-size:0.78rem;color:var(--text-muted)">→ 処理ログ 🔄</span></div><ul class="rpanel-ul">';
+  titleRules.filter(r => r.keyword).forEach(r => {
+    const cond = r.hitoOnly ? '（人名がある予定だけ）' : '';
+    const note = r.note ? '（場所なしなら「※場所・送迎等確認中」付き）' : '';
+    html += `<li>「${escHtml(r.keyword)}」を含む${cond} → 「${escHtml(r.label)}」に置換${note}</li>`;
+  });
   if (CONVERT_HITO) html += '<li>「○○さん」「○○氏」「○○様」（1〜5文字の人名）→ 「来客あり」に置換</li>';
-  CONVERT_TO_YOTEI.filter(kw => kw).forEach(kw => { html += `<li>「${escHtml(kw)}」を含む → 「予定あり」に置換</li>`; });
   html += '</ul>';
 
   html += '<div class="rpanel-cat">⑤ 出力しない予定（除外ルール） <span style="font-size:0.78rem;color:var(--text-muted)">→ 処理ログ 📅</span></div><ul class="rpanel-ul">';
@@ -3915,27 +3967,119 @@ function getDocTitle() {
   return (el?.value || '').trim() || '週間日程表';
 }
 
-// ── キーワードリスト管理（C-1: 予定あり変換、C-2: OT免除）────────────
-function loadYoteiKws() {
-  const saved = localStorage.getItem('gcal_convert_to_yotei');
-  if (saved) { try { const a = JSON.parse(saved); if (Array.isArray(a)) CONVERT_TO_YOTEI = a; } catch(e) {} }
-  // 一度だけ：旧保存リストに「ブロック」を補完（項目2）。以後はユーザーが自由に削除可
+// ── タイトル変換ルール管理（C-1: 旧「予定あり変換キーワード」を統合）────────────
+// 旧形式（文字列の配列＝すべて「予定あり」に変換）を新形式のルールへ変換する
+function migrateTitleRule(r) {
+  if (typeof r === 'string') {
+    // 「ブロック」は在席確保が目的で送迎の概念がないため注記なし（従来の特例を再現）
+    return { keyword: r, label: '予定あり', hitoOnly: false, note: r !== 'ブロック' };
+  }
+  return {
+    keyword: String(r?.keyword ?? ''),
+    label: String(r?.label ?? '予定あり').trim() || '予定あり',
+    hitoOnly: !!r?.hitoOnly,
+    note: !!r?.note,
+  };
+}
+function loadTitleRules() {
+  const saved = localStorage.getItem('gcal_title_rules');
+  if (saved) {
+    try {
+      const a = JSON.parse(saved);
+      if (Array.isArray(a)) { titleRules = a.map(migrateTitleRule); return; }
+    } catch(e) {}
+  }
+  // 旧「予定あり変換キーワード」からの移行（現在の挙動をそのまま再現）
   try {
-    if (!localStorage.getItem('gcal_yotei_block_migrated')) {
-      if (!CONVERT_TO_YOTEI.includes('ブロック')) {
-        CONVERT_TO_YOTEI.push('ブロック');
-        localStorage.setItem('gcal_convert_to_yotei', JSON.stringify(CONVERT_TO_YOTEI));
-      }
-      localStorage.setItem('gcal_yotei_block_migrated', '1');
+    const old = localStorage.getItem('gcal_convert_to_yotei');
+    if (old) {
+      const arr = JSON.parse(old);
+      if (Array.isArray(arr)) titleRules = arr.filter(k => k).map(migrateTitleRule);
     }
   } catch(e) {}
+  // 「訪問」ルールを一度だけ補完（「○○様訪問」が「来客あり」になる問題への対応）
+  if (!titleRules.some(r => r.keyword === '訪問')) {
+    titleRules.push({ keyword: '訪問', label: '訪問あり', hitoOnly: true, note: false });
+  }
+  localStorage.setItem('gcal_title_rules', JSON.stringify(titleRules));
 }
-function saveYoteiKws() {
-  localStorage.setItem('gcal_convert_to_yotei', JSON.stringify(CONVERT_TO_YOTEI));
+function saveTitleRules() {
+  localStorage.setItem('gcal_title_rules', JSON.stringify(titleRules));
+  renderRulesPreview();
+  runTitleRuleTest();   // ルールを変えたらテスト結果も更新
   // 既定と差分があれば実績解除（追加・削除・編集すべてを拾う）
-  const cur = JSON.stringify([...CONVERT_TO_YOTEI].sort());
-  const def = JSON.stringify([...DEFAULT_CONVERT_TO_YOTEI].sort());
-  if (cur !== def) { try { unlockAchievement('yotei_kw_added'); } catch(e) {} }
+  if (JSON.stringify(titleRules) !== JSON.stringify(DEFAULT_TITLE_RULES)) {
+    try { unlockAchievement('yotei_kw_added'); } catch(e) {}
+  }
+}
+// タイトル変換の判定（Excel出力と「変換テスト」欄で共用＝説明と実挙動がズレないように）
+//   rawTitle : ｜より前後を含む全体（キーワード判定に使用）
+//   mainText : ｜より前の部分（人名判定に使用。省略時は rawTitle）
+// 戻り値 null=変換なし / {type:'rule'|'hito', rule, label, hito}
+function matchTitleRule(rawTitle, mainText) {
+  const hitoMatch = String(mainText ?? rawTitle).match(HITO_RE);
+  const rule = titleRules.find(r =>
+    r.keyword && rawTitle.includes(r.keyword) && (!r.hitoOnly || hitoMatch)
+  );
+  if (rule) {
+    return { type: 'rule', rule, label: (rule.label || '予定あり').trim() || '予定あり', hito: hitoMatch ? hitoMatch[0] : null };
+  }
+  if (CONVERT_HITO && hitoMatch) {
+    return { type: 'hito', rule: null, label: '来客あり', hito: hitoMatch[0] };
+  }
+  return null;
+}
+// 変換テスト欄：入力したタイトルが実際にどう表示されるかを即時に返す
+function runTitleRuleTest() {
+  const el = document.getElementById('titleRuleTestInput');
+  const out = document.getElementById('titleRuleTestResult');
+  if (!el || !out) return;
+  const raw = (el.value || '').trim();
+  if (!raw) {
+    out.innerHTML = '<span style="color:var(--text-muted)">カレンダーのタイトルを入力すると、出力される文言が表示されます</span>';
+    return;
+  }
+  // Excel出力と同じ前処理（「※〜確定〜」の除去 →「｜」で main / sub に分割）
+  const cleaned = raw.replace(/※日程は確定[^\n]*/g, '').replace(/※[^\n]*確定[^\n]*/g, '').trim();
+  const mk = (body, cls) => `<span style="color:${cls}">${body}</span>`;
+  if (cleaned.startsWith('※') || cleaned.includes('床屋') || cleaned.includes('散髪')) {
+    out.innerHTML = mk('この予定は出力されません（「※」で始まる／「床屋」「散髪」を含む予定は除外）', 'var(--text-muted)');
+    return;
+  }
+  const { main, sub } = parseTitle(cleaned);
+  // 「｜」の後ろ（sub）はセル内の次の行に出るため、テスト結果にも添える
+  const subNote = sub ? mk(`<br>※「｜」の後ろの「${escHtml(sub)}」は、セル内の次の行に表示されます`, 'var(--text-muted)') : '';
+  if (main.startsWith('予定あり')) {
+    out.innerHTML = mk('→「予定あり」', 'var(--accent)') + mk('（タイトルが「予定あり」で始まるため）', 'var(--text-muted)') + subNote;
+    return;
+  }
+  const m = matchTitleRule(cleaned, main);
+  if (!m) {
+    out.innerHTML = mk(`→「${escHtml(main)}」`, 'var(--text)') + mk('（どのルールにも一致せず、そのまま表示されます）', 'var(--text-muted)') + subNote;
+    return;
+  }
+  let why, extra = '';
+  if (m.type === 'rule') {
+    why = `（ルール「${escHtml(m.rule.keyword)}」に一致${m.rule.hitoOnly ? `・人名「${escHtml(m.hito)}」あり` : ''}）`;
+    if (m.rule.note) extra = '<br><span style="color:var(--text-muted)">※ 場所が未設定の場合は「　※場所・送迎等確認中」が付きます</span>';
+  } else {
+    why = `（人名「${escHtml(m.hito)}」に一致。どのルールにも当たらないため）`;
+  }
+  out.innerHTML = mk(`→「${escHtml(m.label)}」`, 'var(--accent)') + mk(why, 'var(--text-muted)') + subNote + extra;
+}
+function loadHitoConvert() {
+  const v = localStorage.getItem('gcal_hito_convert');
+  CONVERT_HITO = (v === null) ? true : (v === '1');
+  const chk = document.getElementById('hitoConvertChk');
+  if (chk) chk.checked = CONVERT_HITO;
+}
+function saveHitoConvert() {
+  const chk = document.getElementById('hitoConvertChk');
+  CONVERT_HITO = chk ? !!chk.checked : true;
+  localStorage.setItem('gcal_hito_convert', CONVERT_HITO ? '1' : '0');
+  renderTitleRuleSection();
+  renderRulesPreview();
+  runTitleRuleTest();
 }
 function loadOtOkKws() {
   const saved = localStorage.getItem('gcal_ot_ok_keywords');
@@ -3963,21 +4107,85 @@ function renderKwEditView(elId, list, prefix) {
   el.innerHTML = rows + `<button class="btn btn-secondary" style="font-size:0.8rem;padding:6px 12px;margin-top:4px" onclick="${prefix}AddKw()">＋ キーワードを追加</button>`;
 }
 
-let yoteiKwEditMode = false;
-function renderYoteiKwSection() {
-  renderKwReadView('yoteiKwReadView', CONVERT_TO_YOTEI, '（キーワードなし）');
-  renderKwEditView('yoteiKwEditView', CONVERT_TO_YOTEI, 'yotei');
+// ── タイトル変換ルールの編集UI（上から順に判定。色ルールと同じ操作感）──
+let titleRuleEditMode = false;
+function titleRuleChip(text) {
+  return `<span class="rpanel-chip" style="background:var(--surface2);color:var(--text);font-size:0.82rem;padding:3px 10px;margin:2px">${escHtml(text)}</span>`;
 }
-function toggleYoteiKwEdit() {
-  yoteiKwEditMode = !yoteiKwEditMode;
-  document.getElementById('yoteiKwEditView').style.display = yoteiKwEditMode ? '' : 'none';
-  document.getElementById('yoteiKwReadView').style.display = yoteiKwEditMode ? 'none' : '';
-  document.getElementById('yoteiKwEditBtn').textContent = yoteiKwEditMode ? '✅ 編集完了' : '✏️ 編集する';
-  if (!yoteiKwEditMode) { renderYoteiKwSection(); renderRulesPreview(); }
+function renderTitleRuleReadView() {
+  const el = document.getElementById('titleRuleReadView');
+  if (!el) return;
+  const items = titleRules.filter(r => r.keyword).map(r => {
+    const opt = [r.hitoOnly ? '人名がある予定だけ' : '', r.note ? '場所なしは注記' : ''].filter(Boolean).join('・');
+    return titleRuleChip(`${r.keyword} → ${r.label}${opt ? '（' + opt + '）' : ''}`);
+  });
+  const hito = CONVERT_HITO
+    ? titleRuleChip('人名（○○さん/氏/様）→ 来客あり')
+    : `<span style="color:var(--text-muted);font-size:0.82rem">（人名→来客あり は OFF）</span>`;
+  el.innerHTML = (items.length ? items.join('') : `<span style="color:var(--text-muted);font-size:0.85rem">（ルールなし）</span>`)
+    + `<div style="margin-top:6px;font-size:0.78rem;color:var(--text-muted)">最後に判定：${hito}</div>`;
 }
-function yoteiAddKw() { CONVERT_TO_YOTEI.push(''); saveYoteiKws(); renderYoteiKwSection(); unlockAchievement('yotei_kw_added'); }
-function yoteiRemoveKw(i) { CONVERT_TO_YOTEI.splice(i, 1); saveYoteiKws(); renderYoteiKwSection(); renderRulesPreview(); }
-function yoteiEditKw(i, v) { CONVERT_TO_YOTEI[i] = v.trim(); saveYoteiKws(); renderRulesPreview(); }
+function renderTitleRuleEditView() {
+  const el = document.getElementById('titleRuleEditView');
+  if (!el) return;
+  const inputStyle = 'margin-bottom:0;font-size:0.85rem;padding:4px 8px;min-width:0';
+  const btnStyle = 'font-size:0.78rem;padding:4px 8px';
+  const selStyle = 'padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.8rem';
+  const rows = titleRules.map((r, i) => `
+    <div style="display:flex;gap:5px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+      <input type="text" value="${escHtml(r.keyword)}" placeholder="キーワード（例：訪問）"
+        onchange="titleRuleEdit(${i},'keyword',this.value)" style="flex:1 1 100px;${inputStyle}">
+      <span style="color:var(--text-muted);font-size:0.78rem;white-space:nowrap">を含む</span>
+      <select title="このルールを適用する範囲" onchange="titleRuleEdit(${i},'hitoOnly',this.value==='hito')" style="${selStyle}">
+        <option value="" ${!r.hitoOnly?'selected':''}>すべての予定</option>
+        <option value="hito" ${r.hitoOnly?'selected':''}>人名がある予定だけ</option>
+      </select>
+      <span style="color:var(--text-muted);font-size:0.8rem">→</span>
+      <input type="text" value="${escHtml(r.label)}" placeholder="表示名（例：訪問あり）"
+        onchange="titleRuleEdit(${i},'label',this.value)" style="flex:1 1 95px;${inputStyle}">
+      <span style="color:var(--text-muted);font-size:0.78rem;white-space:nowrap">と表示</span>
+      <label title="場所が未設定のとき「※場所・送迎等確認中」を付けます"
+        style="display:flex;align-items:center;gap:3px;font-size:0.78rem;white-space:nowrap;cursor:pointer">
+        <input type="checkbox" ${r.note?'checked':''} onchange="titleRuleEdit(${i},'note',this.checked)" style="width:auto;margin:0">場所なしは注記
+      </label>
+      <button class="btn btn-secondary" title="上へ（先に判定）" onclick="titleRuleMove(${i},-1)" style="${btnStyle}">↑</button>
+      <button class="btn btn-secondary" title="下へ（後で判定）" onclick="titleRuleMove(${i},1)" style="${btnStyle}">↓</button>
+      <button class="btn btn-secondary" onclick="titleRuleRemove(${i})" style="${btnStyle}">削除</button>
+    </div>`).join('');
+  el.innerHTML = rows
+    + `<button class="btn btn-secondary" style="font-size:0.8rem;padding:6px 12px;margin-top:4px" onclick="titleRuleAdd()">＋ ルールを追加</button>`
+    + `<p class="hint" style="margin-top:8px;margin-bottom:0">上から順に判定し、最初に一致した1件だけを適用します。どれにも一致しない場合は下の「人名→来客あり」が働きます。<br>
+       「人名がある予定だけ」＝タイトルに「○○さん・○○氏・○○様」が入っている予定にだけ適用します（例：「田中様訪問」は変換、「工場訪問」はそのまま）。</p>`;
+}
+function renderTitleRuleSection() {
+  renderTitleRuleReadView();
+  renderTitleRuleEditView();
+}
+function toggleTitleRuleEdit() {
+  titleRuleEditMode = !titleRuleEditMode;
+  document.getElementById('titleRuleEditView').style.display = titleRuleEditMode ? '' : 'none';
+  document.getElementById('titleRuleReadView').style.display = titleRuleEditMode ? 'none' : '';
+  document.getElementById('titleRuleEditBtn').textContent = titleRuleEditMode ? '✅ 編集完了' : '✏️ 編集する';
+  if (!titleRuleEditMode) { renderTitleRuleSection(); renderRulesPreview(); }
+}
+function titleRuleEdit(i, key, val) {
+  if (!titleRules[i]) return;
+  titleRules[i][key] = (typeof val === 'string') ? val.trim() : !!val;
+  if (key === 'label' && !titleRules[i].label) titleRules[i].label = '予定あり';
+  saveTitleRules();
+  if (key !== 'keyword' && key !== 'label') renderTitleRuleEditView();  // 文字入力中は再描画しない
+}
+function titleRuleAdd() {
+  titleRules.push({ keyword: '', label: '予定あり', hitoOnly: false, note: false });
+  saveTitleRules(); renderTitleRuleSection();
+}
+function titleRuleRemove(i) { titleRules.splice(i, 1); saveTitleRules(); renderTitleRuleSection(); }
+function titleRuleMove(i, delta) {
+  const j = i + delta;
+  if (j < 0 || j >= titleRules.length) return;
+  [titleRules[i], titleRules[j]] = [titleRules[j], titleRules[i]];
+  saveTitleRules(); renderTitleRuleSection();
+}
 
 let otOkKwEditMode = false;
 function renderOtOkKwSection() {
@@ -4070,7 +4278,10 @@ function exportSettings() {
       docTitle: localStorage.getItem('gcal_doc_title') || '',
       colorRules: colorRules,
       defaultColor: localStorage.getItem('gcal_default_color') || DEFAULT_BG,
-      convertToYotei: CONVERT_TO_YOTEI,
+      titleRules: titleRules,
+      hitoConvert: CONVERT_HITO,
+      // 旧バージョンで読み込めるよう「予定あり」変換分だけ従来キーで併記
+      convertToYotei: titleRules.filter(r => r.keyword && r.label === '予定あり').map(r => r.keyword),
       otOkKeywords: OT_OK_KEYWORDS,
       drivers: drivers,
       presetCalId: localStorage.getItem('gcal_preset_calid') || '',
@@ -4113,8 +4324,17 @@ function importSettings(file) {
         localStorage.setItem('gcal_default_color', dc);
         const el = document.getElementById('defaultColor'); if (el) el.value = dc;
       }
-      // 変換キーワード
-      if (Array.isArray(s.convertToYotei)) { CONVERT_TO_YOTEI = s.convertToYotei; saveYoteiKws(); }
+      // タイトル変換ルール（新形式を優先。旧「予定あり変換キーワード」も読める）
+      if (Array.isArray(s.titleRules)) {
+        titleRules = s.titleRules.map(migrateTitleRule); saveTitleRules();
+      } else if (Array.isArray(s.convertToYotei)) {
+        titleRules = s.convertToYotei.filter(k => k).map(migrateTitleRule); saveTitleRules();
+      }
+      if (typeof s.hitoConvert === 'boolean') {
+        CONVERT_HITO = s.hitoConvert;
+        localStorage.setItem('gcal_hito_convert', CONVERT_HITO ? '1' : '0');
+        const chk = document.getElementById('hitoConvertChk'); if (chk) chk.checked = CONVERT_HITO;
+      }
       if (Array.isArray(s.otOkKeywords))  { OT_OK_KEYWORDS  = s.otOkKeywords;  saveOtOkKws(); }
       // ドライバー
       if (s.drivers) {
@@ -4139,7 +4359,7 @@ function importSettings(file) {
       }
 
       // 再描画
-      renderYoteiKwSection();
+      renderTitleRuleSection();
       renderOtOkKwSection();
       renderRules();
       if (typeof renderDriverReadView === 'function') renderDriverReadView();
@@ -5330,27 +5550,25 @@ async function exportExcel(opts = {}) {
         }
       }
       if (displayMain === null) {
-        const matchedYoteiKw = CONVERT_TO_YOTEI.find(kw => kw && rawSummary.includes(kw));
-        const shouldConvert = !!matchedYoteiKw;
-        const isHitoConvert = !shouldConvert && CONVERT_HITO && /[一-龥ぁ-んァ-ヶ]{1,5}(?:さん|氏|様)/.test(main);
-        if (shouldConvert) {
-          addProcLog('🔄', `${dateTag}　「${rawSummary.slice(0,30)}」→「予定あり」（キーワード「${matchedYoteiKw}」に一致）`);
+        // 判定は matchTitleRule に集約（「変換テスト」欄と同じロジック）
+        const m = matchTitleRule(rawSummary, main);
+        if (m && m.type === 'rule') {
+          const only = m.rule.hitoOnly ? '・人名あり' : '';
+          addProcLog('🔄', `${dateTag}　「${rawSummary.slice(0,30)}」→「${m.label}」（キーワード「${m.rule.keyword}」に一致${only}）`);
           if (rawLoc.trim()) {
             effectiveLoc = cityFromLoc(rawLoc) ? cityFromLoc(rawLoc) + '内' : cleanLoc;
-            displayMain = '予定あり';
-          } else if (matchedYoteiKw === 'ブロック') {
-            // ブロックは在席確保が目的で外出・送迎の概念がない → 注記なしの「予定あり」
-            displayMain = '予定あり';
-            effectiveLoc = '';
-          } else {
-            displayMain = '予定あり　※場所・送迎等確認中';
+            displayMain = m.label;
+          } else if (m.rule.note) {
+            displayMain = m.label + '　※場所・送迎等確認中';
             effectiveLoc = '';
             forceTrailingPeriod = true;
+          } else {
+            // 注記なし（「ブロック」等、在席確保で外出・送迎の概念がないもの）
+            displayMain = m.label;
+            effectiveLoc = '';
           }
-        } else if (isHitoConvert) {
-          const hitoMatch = main.match(/[一-龥ぁ-んァ-ヶ]{1,5}(?:さん|氏|様)/);
-          const hitoStr = hitoMatch ? hitoMatch[0] : '';
-          addProcLog('🔄', `${dateTag}　「${rawSummary.slice(0,30)}」→「来客あり」（人名パターン「${hitoStr}」に一致）`);
+        } else if (m && m.type === 'hito') {
+          addProcLog('🔄', `${dateTag}　「${rawSummary.slice(0,30)}」→「来客あり」（人名パターン「${m.hito}」に一致）`);
           // 来客は先方が来庁するため送迎不要。場所未設定でも注記は付けない（「来客あり」のみ）
           effectiveLoc = rawLoc.trim() ? (cityFromLoc(rawLoc) ? cityFromLoc(rawLoc) + '内' : cleanLoc) : '';
           displayMain = '来客あり';
@@ -5358,7 +5576,7 @@ async function exportExcel(opts = {}) {
       }
       // C-4: 「議員」を含むタイトル（予定あり/来客あり 変換済みでなければ）警告
       if (displayMain === null && rawSummary.includes('議員')) {
-        addProcLog('📋', `${dateTag}　議員含む・要確認: 「${rawSummary.slice(0,30)}」 →「予定あり」変換キーワードへの追加を検討`);
+        addProcLog('📋', `${dateTag}　議員含む・要確認: 「${rawSummary.slice(0,30)}」 → タイトル変換ルールへの追加を検討`);
       }
       const locPart = effectiveLoc ? '。' + effectiveLoc : (forceTrailingPeriod ? '。' : '');
       const timeStr = `（${pad(evStart.getHours())}:${pad(evStart.getMinutes())}–${pad(evEnd.getHours())}:${pad(evEnd.getMinutes())}${locPart}）`;
@@ -5670,7 +5888,8 @@ async function exportExcel(opts = {}) {
 loadPresetCal();
 loadClientId();
 loadDocTitle();
-loadYoteiKws();
+loadTitleRules();
+loadHitoConvert();
 loadOtOkKws();
 loadColorRules();
 loadSavedIcsUrls();
@@ -5689,7 +5908,8 @@ setupLogoSecret();
 })();
 updateDQStatus();
 renderSkillDateButtons();
-renderYoteiKwSection();
+renderTitleRuleSection();
+runTitleRuleTest();
 renderOtOkKwSection();
 
 (function loadDriverPresets() {
@@ -5795,10 +6015,13 @@ window.reauth        = reauth;
 window.saveFilenamePreset = saveFilenamePreset;
 window.saveClientId  = saveClientId;
 window.saveDocTitle  = saveDocTitle;
-window.toggleYoteiKwEdit = toggleYoteiKwEdit;
-window.yoteiAddKw    = yoteiAddKw;
-window.yoteiRemoveKw = yoteiRemoveKw;
-window.yoteiEditKw   = yoteiEditKw;
+window.toggleTitleRuleEdit = toggleTitleRuleEdit;
+window.titleRuleAdd    = titleRuleAdd;
+window.titleRuleRemove = titleRuleRemove;
+window.titleRuleEdit   = titleRuleEdit;
+window.titleRuleMove   = titleRuleMove;
+window.saveHitoConvert = saveHitoConvert;
+window.runTitleRuleTest = runTitleRuleTest;
 window.toggleOtOkKwEdit = toggleOtOkKwEdit;
 window.otOkAddKw     = otOkAddKw;
 window.otOkRemoveKw  = otOkRemoveKw;
