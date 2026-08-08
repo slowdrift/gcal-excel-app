@@ -836,7 +836,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 <div class="header">
   <div class="header-row">
     <h1>Googleカレンダー → Excel 変換<span class="header-suffix">（Webアプリ）</span></h1>
-    <div class="header-version" onclick="showChangelog()" title="クリックで更新履歴を表示">v1.10.2&nbsp;&nbsp;•&nbsp;&nbsp;2026-08-08</div>
+    <div class="header-version" onclick="showChangelog()" title="クリックで更新履歴を表示">v1.11.0&nbsp;&nbsp;•&nbsp;&nbsp;2026-08-08</div>
   </div>
   <p>Googleカレンダーの予定を週間スケジュール表（15分単位）としてExcelに出力します</p>
   <div id="dqStatusBar" style="display:none" onclick="showAchievementsModal()" title="クリックで「ぼうけんのきろく」を開く"></div>
@@ -1123,7 +1123,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
       <div class="config-section-head">
         <button class="btn btn-secondary" id="titleRuleEditBtn" onclick="toggleTitleRuleEdit()" style="font-size:0.78rem;padding:6px 12px">✏️ 編集する</button>
       </div>
-      <p class="hint" style="margin-top:0;margin-bottom:8px">※ キーワードを含むイベントのタイトルを、指定した文言に置き換えます（例：「ブロック」→「予定あり」）。<strong>上から順に判定</strong>し、最初に一致した1件だけを適用します。<br>
+      <p class="hint" style="margin-top:0;margin-bottom:8px">※ <strong>出力したい文言ごとにカードを作り</strong>、その文言に変換したいキーワードをカード内にまとめます（例：カード「予定あり」に「ブロック」「議員」）。カード内のキーワードは<strong>いずれか1つを含めば</strong>一致し、<strong>上から順に判定</strong>して最初に一致した1枚だけを適用します。<br>
       適用範囲の「<strong>人名がある予定だけ</strong>」は、タイトルに「○○さん・○○氏・○○様」が入っている予定にだけ働きます（例：「田中様訪問」は変換、「工場訪問」はそのまま）。</p>
       <div id="titleRuleReadView" style="margin-bottom:8px"></div>
       <div id="titleRuleEditView" style="display:none;margin-bottom:8px"></div>
@@ -1396,8 +1396,9 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
           <h4>🔒 タイトル変換ルール</h4>
           <p>プライバシー配慮のため、特定キーワードを含むタイトルを別の文言に置換します。配布用資料でセンシティブな予定名を隠す用途に使えます。</p>
           <ul>
-            <li>各ルールは「<strong>キーワード → 表示名</strong>」の形。表示名は自由に決められます（例：「ブロック」→「予定あり」、「訪問」→「訪問あり」）</li>
-            <li><strong>上から順に判定</strong>し、最初に一致した1件だけを適用します。↑↓ボタンで優先順位を変更できます</li>
+            <li><strong>「出力される文言」ごとに1枚のカード</strong>を作り、その文言に変換したいキーワードをカード内にまとめます（例：カード「予定あり」に「ブロック」「議員」を登録）</li>
+            <li>カード内のキーワードは<strong>いずれか1つを含めば</strong>一致します</li>
+            <li><strong>上から順に判定</strong>し、最初に一致した1枚だけを適用します。↑↓ボタンで優先順位を変更できます</li>
             <li><strong>適用範囲</strong>：「すべての予定」か「人名がある予定だけ」を選べます。「人名がある予定だけ」は、タイトルに「○○さん」「○○氏」「○○様」が入っている予定にだけ適用する設定です。例えば「訪問」ルールをこれにしておくと、「田中様訪問」は「訪問あり」になり、「○○工場訪問」はそのまま残ります</li>
             <li><strong>場所なしは注記</strong>：場所が未設定のとき「※場所・送迎等確認中」を付けます</li>
             <li>どのルールにも一致しない場合、人名を含む予定は「来客あり」に変換されます（チェックでON/OFF可）</li>
@@ -2981,7 +2982,7 @@ function checkAchievementsOnExport(eventsForExport, ctx = {}) {
     const mwName = (document.getElementById('driverNameMW')?.value || '').trim();
     const tfName = (document.getElementById('driverNameTF')?.value || '').trim();
     if ((mwName && mwName !== '運転手A') || (tfName && tfName !== '運転手B')) unlockAchievement('driver_set');
-    if (Array.isArray(titleRules) && titleRules.filter(r=>r.keyword).length > DEFAULT_TITLE_RULES.length) unlockAchievement('yotei_kw_added');
+    if (Array.isArray(titleRules) && countTitleKeywords(titleRules) > countTitleKeywords(DEFAULT_TITLE_RULES)) unlockAchievement('yotei_kw_added');
     if (Array.isArray(colorRules) && colorRules.length !== 3) unlockAchievement('color_sense');
 
     // 30日継続
@@ -3269,6 +3270,12 @@ function setupLogoSecret() {
 // ── 更新履歴 ──────
 const CHANGELOG = [
   {
+    version: '1.11.0', date: '2026-08-08',
+    changes: [
+      { type: 'feature', text: 'タイトル変換ルールを「出力する文言ごと」の構成に変更しました。カード1枚＝出力される文言1つとし、その文言に変換したいキーワードをカード内にまとめて管理・編集できます（例：カード「予定あり」に「ブロック」「議員」を登録）。カード内のキーワードはいずれか1つを含めば一致します。既存の設定は自動で集約・移行されます' },
+    ],
+  },
+  {
     version: '1.10.2', date: '2026-08-08',
     changes: [
       { type: 'feature', text: 'タイトル変換ルールの一覧を見やすく改善。各ルールを枠で囲み、①②…の番号で判定順を明示しました（画面が狭くて折り返しても、どこまでが1つのルールか分かります）。設定件数も見出しに表示され、先頭の↑・末尾の↓は押せないことが一目で分かるようにしました' },
@@ -3530,14 +3537,15 @@ const HITO_RE = /[一-龥ぁ-んァ-ヶ]{1,5}(?:さん|氏|様)/;
 let CONVERT_HITO = true;         // 人名 →「来客あり」変換の ON/OFF（UIで切替）
 
 // タイトル変換ルール（UI編集可能・localStorage連携）
-//   keyword : タイトルに含まれていれば一致
-//   label   : 置き換えて表示する文言（例「予定あり」「訪問あり」）
+// 「出力される文言」を1件＝1カードとし、その文言に集約したいキーワードを束ねて持つ。
+//   label   : 置き換えて表示する文言（例「予定あり」「訪問あり」）＝カードの主役
+//   keywords: この文言に変換するキーワード群（いずれかを含めば一致）
 //   hitoOnly: true なら「人名（○○様等）を含む予定」にだけ適用（無関係な予定を潰さないため）
 //   note    : true なら場所未設定のとき「　※場所・送迎等確認中」を付ける
-// 上から順に判定し、最初に一致した1件を適用。どれにも一致しなければ人名→「来客あり」。
+// 上から順に判定し、最初に一致したカードを適用。どれにも一致しなければ人名→「来客あり」。
 const DEFAULT_TITLE_RULES = [
-  { keyword: 'ブロック', label: '予定あり', hitoOnly: false, note: false },
-  { keyword: '訪問',     label: '訪問あり', hitoOnly: true,  note: false },
+  { label: '予定あり', keywords: ['ブロック'], hitoOnly: false, note: false },
+  { label: '訪問あり', keywords: ['訪問'],     hitoOnly: true,  note: false },
 ];
 let titleRules = DEFAULT_TITLE_RULES.map(r => ({ ...r }));
 
@@ -3833,10 +3841,11 @@ function renderRulesPreview() {
   html += '</ul>';
 
   html += '<div class="rpanel-cat">④ タイトルの自動変換（プライバシー配慮・上から順に判定） <span style="font-size:0.78rem;color:var(--text-muted)">→ 処理ログ 🔄</span></div><ul class="rpanel-ul">';
-  titleRules.filter(r => r.keyword).forEach(r => {
+  titleRules.filter(r => (r.keywords || []).some(Boolean)).forEach(r => {
     const cond = r.hitoOnly ? '（人名がある予定だけ）' : '';
     const note = r.note ? '（場所なしなら「※場所・送迎等確認中」付き）' : '';
-    html += `<li>「${escHtml(r.keyword)}」を含む${cond} → 「${escHtml(r.label)}」に置換${note}</li>`;
+    const kws = r.keywords.filter(Boolean).map(k => `「${escHtml(k)}」`).join('・');
+    html += `<li>${kws} のいずれかを含む${cond} → 「${escHtml(r.label)}」に置換${note}</li>`;
   });
   if (CONVERT_HITO) html += '<li>「○○さん」「○○氏」「○○様」（1〜5文字の人名）→ 「来客あり」に置換</li>';
   html += '</ul>';
@@ -3974,38 +3983,66 @@ function getDocTitle() {
 }
 
 // ── タイトル変換ルール管理（C-1: 旧「予定あり変換キーワード」を統合）────────────
-// 旧形式（文字列の配列＝すべて「予定あり」に変換）を新形式のルールへ変換する
-function migrateTitleRule(r) {
-  if (typeof r === 'string') {
-    // 「ブロック」は在席確保が目的で送迎の概念がないため注記なし（従来の特例を再現）
-    return { keyword: r, label: '予定あり', hitoOnly: false, note: r !== 'ブロック' };
-  }
-  return {
-    keyword: String(r?.keyword ?? ''),
-    label: String(r?.label ?? '予定あり').trim() || '予定あり',
-    hitoOnly: !!r?.hitoOnly,
-    note: !!r?.note,
-  };
+// 保存データを現行の「文言＝1カード」形式へ正規化する。
+// 受け付ける形： ①文字列の配列（最初期の予定あり変換キーワード）
+//               ②{keyword,label,hitoOnly,note} の配列（v1.10.x のキーワード単位）
+//               ③{label,keywords[],hitoOnly,note} の配列（現行）
+// ②は「文言＋適用範囲＋注記」が同じものを1カードに集約する（初出の順序を維持）。
+// 全カードのキーワード総数（実績判定・件数表示に使用）
+function countTitleKeywords(rules) {
+  return (rules || []).reduce((n, r) => n + (r.keywords || []).filter(Boolean).length, 0);
+}
+function normalizeTitleRules(arr) {
+  const flat = [];
+  const push = (keyword, label, hitoOnly, note) =>
+    flat.push({ keyword: String(keyword ?? '').trim(), label: String(label ?? '予定あり').trim() || '予定あり', hitoOnly: !!hitoOnly, note: !!note });
+  (Array.isArray(arr) ? arr : []).forEach(r => {
+    if (typeof r === 'string') {
+      // 「ブロック」は在席確保が目的で送迎の概念がないため注記なし（従来の特例を再現）
+      if (r.trim()) push(r, '予定あり', false, r.trim() !== 'ブロック');
+      return;
+    }
+    if (!r || typeof r !== 'object') return;
+    if (Array.isArray(r.keywords)) {
+      const kws = r.keywords.map(k => String(k ?? '').trim()).filter(Boolean);
+      if (kws.length) kws.forEach(k => push(k, r.label, r.hitoOnly, r.note));
+      else push('', r.label, r.hitoOnly, r.note);   // キーワード未入力のカードも保持
+    } else {
+      push(r.keyword, r.label, r.hitoOnly, r.note);
+    }
+  });
+  const groups = [], idx = new Map();
+  flat.forEach(f => {
+    const key = `${f.label}|${f.hitoOnly ? 1 : 0}|${f.note ? 1 : 0}`;
+    let g = idx.get(key);
+    if (!g) { g = { label: f.label, keywords: [], hitoOnly: f.hitoOnly, note: f.note }; idx.set(key, g); groups.push(g); }
+    if (f.keyword && !g.keywords.includes(f.keyword)) g.keywords.push(f.keyword);
+  });
+  return groups;
 }
 function loadTitleRules() {
   const saved = localStorage.getItem('gcal_title_rules');
   if (saved) {
     try {
       const a = JSON.parse(saved);
-      if (Array.isArray(a)) { titleRules = a.map(migrateTitleRule); return; }
+      if (Array.isArray(a) && a.length) {
+        titleRules = normalizeTitleRules(a);   // 旧形式（キーワード単位）もここで集約される
+        localStorage.setItem('gcal_title_rules', JSON.stringify(titleRules));
+        return;
+      }
     } catch(e) {}
   }
-  // 旧「予定あり変換キーワード」からの移行（現在の挙動をそのまま再現）
+  // さらに古い「予定あり変換キーワード」からの移行（従来の挙動をそのまま再現）
   try {
     const old = localStorage.getItem('gcal_convert_to_yotei');
     if (old) {
       const arr = JSON.parse(old);
-      if (Array.isArray(arr)) titleRules = arr.filter(k => k).map(migrateTitleRule);
+      if (Array.isArray(arr) && arr.length) titleRules = normalizeTitleRules(arr);
     }
   } catch(e) {}
   // 「訪問」ルールを一度だけ補完（「○○様訪問」が「来客あり」になる問題への対応）
-  if (!titleRules.some(r => r.keyword === '訪問')) {
-    titleRules.push({ keyword: '訪問', label: '訪問あり', hitoOnly: true, note: false });
+  if (!titleRules.some(r => (r.keywords || []).includes('訪問'))) {
+    titleRules.push({ label: '訪問あり', keywords: ['訪問'], hitoOnly: true, note: false });
   }
   localStorage.setItem('gcal_title_rules', JSON.stringify(titleRules));
 }
@@ -4024,14 +4061,15 @@ function saveTitleRules() {
 // 戻り値 null=変換なし / {type:'rule'|'hito', rule, label, hito}
 function matchTitleRule(rawTitle, mainText) {
   const hitoMatch = String(mainText ?? rawTitle).match(HITO_RE);
-  const rule = titleRules.find(r =>
-    r.keyword && rawTitle.includes(r.keyword) && (!r.hitoOnly || hitoMatch)
-  );
-  if (rule) {
-    return { type: 'rule', rule, label: (rule.label || '予定あり').trim() || '予定あり', hito: hitoMatch ? hitoMatch[0] : null };
+  for (const rule of titleRules) {
+    if (rule.hitoOnly && !hitoMatch) continue;                     // 「人名がある予定だけ」の絞り込み
+    const kw = (rule.keywords || []).find(k => k && rawTitle.includes(k));
+    if (kw) {
+      return { type: 'rule', rule, keyword: kw, label: (rule.label || '予定あり').trim() || '予定あり', hito: hitoMatch ? hitoMatch[0] : null };
+    }
   }
   if (CONVERT_HITO && hitoMatch) {
-    return { type: 'hito', rule: null, label: '来客あり', hito: hitoMatch[0] };
+    return { type: 'hito', rule: null, keyword: null, label: '来客あり', hito: hitoMatch[0] };
   }
   return null;
 }
@@ -4066,7 +4104,7 @@ function runTitleRuleTest() {
   }
   let why, extra = '';
   if (m.type === 'rule') {
-    why = `（ルール「${escHtml(m.rule.keyword)}」に一致${m.rule.hitoOnly ? `・人名「${escHtml(m.hito)}」あり` : ''}）`;
+    why = `（キーワード「${escHtml(m.keyword)}」に一致${m.rule.hitoOnly ? `・人名「${escHtml(m.hito)}」あり` : ''}）`;
     if (m.rule.note) extra = '<br><span style="color:var(--text-muted)">※ 場所が未設定の場合は「　※場所・送迎等確認中」が付きます</span>';
   } else {
     why = `（人名「${escHtml(m.hito)}」に一致。どのルールにも当たらないため）`;
@@ -4121,9 +4159,10 @@ function titleRuleChip(text) {
 function renderTitleRuleReadView() {
   const el = document.getElementById('titleRuleReadView');
   if (!el) return;
-  const items = titleRules.filter(r => r.keyword).map(r => {
+  // 「出力される文言 ← 集約するキーワード」の形で表示（成果物から逆算して読めるように）
+  const items = titleRules.filter(r => (r.keywords || []).some(Boolean)).map(r => {
     const opt = [r.hitoOnly ? '人名がある予定だけ' : '', r.note ? '場所なしは注記' : ''].filter(Boolean).join('・');
-    return titleRuleChip(`${r.keyword} → ${r.label}${opt ? '（' + opt + '）' : ''}`);
+    return titleRuleChip(`${r.label} ← ${r.keywords.filter(Boolean).join('／')}${opt ? '（' + opt + '）' : ''}`);
   });
   const hito = CONVERT_HITO
     ? titleRuleChip('人名（○○さん/氏/様）→ 来客あり')
@@ -4151,28 +4190,34 @@ function renderTitleRuleEditView() {
         <button class="btn btn-secondary" title="下へ（後で判定）" onclick="titleRuleMove(${i},1)" ${i===last?'disabled':''} style="${btnStyle};${dim(i===last)}">↓</button>
         <button class="btn btn-secondary" title="このルールを削除" onclick="titleRuleRemove(${i})" style="${btnStyle}">削除</button>
       </div>
-      <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
-        <input type="text" value="${escHtml(r.keyword)}" placeholder="キーワード（例：訪問）"
-          onchange="titleRuleEdit(${i},'keyword',this.value)" style="flex:1 1 100px;${inputStyle}">
-        <span style="color:var(--text-muted);font-size:0.78rem;white-space:nowrap">を含む</span>
+      <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+        <span style="color:var(--text-muted);font-size:0.78rem;white-space:nowrap">出力する文言</span>
+        <input type="text" value="${escHtml(r.label)}" placeholder="例：予定あり"
+          onchange="titleRuleEdit(${i},'label',this.value)" style="flex:1 1 110px;${inputStyle}">
         <select title="このルールを適用する範囲" onchange="titleRuleEdit(${i},'hitoOnly',this.value==='hito')" style="${selStyle}">
           <option value="" ${!r.hitoOnly?'selected':''}>すべての予定</option>
           <option value="hito" ${r.hitoOnly?'selected':''}>人名がある予定だけ</option>
         </select>
-        <span style="color:var(--text-muted);font-size:0.8rem">→</span>
-        <input type="text" value="${escHtml(r.label)}" placeholder="表示名（例：訪問あり）"
-          onchange="titleRuleEdit(${i},'label',this.value)" style="flex:1 1 95px;${inputStyle}">
-        <span style="color:var(--text-muted);font-size:0.78rem;white-space:nowrap">と表示</span>
         <label title="場所が未設定のとき「※場所・送迎等確認中」を付けます"
           style="display:flex;align-items:center;gap:3px;font-size:0.78rem;white-space:nowrap;cursor:pointer">
           <input type="checkbox" ${r.note?'checked':''} onchange="titleRuleEdit(${i},'note',this.checked)" style="width:auto;margin:0">場所なしは注記
         </label>
       </div>
+      <div style="border-top:1px dashed var(--border);padding-top:6px">
+        <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:4px">この文言に変換するキーワード（いずれかを含む予定が対象）</div>
+        ${(r.keywords && r.keywords.length ? r.keywords : ['']).map((k, j) => `
+          <div style="display:flex;gap:5px;align-items:center;margin-bottom:4px">
+            <input type="text" value="${escHtml(k)}" placeholder="例：ブロック"
+              onchange="titleRuleKwEdit(${i},${j},this.value)" style="flex:1 1 auto;${inputStyle}">
+            <button class="btn btn-secondary" title="このキーワードを削除" onclick="titleRuleKwRemove(${i},${j})" style="${btnStyle}">×</button>
+          </div>`).join('')}
+        <button class="btn btn-secondary" style="font-size:0.76rem;padding:4px 10px;margin-top:2px" onclick="titleRuleKwAdd(${i})">＋ キーワードを追加</button>
+      </div>
     </div>`;
   }).join('');
-  const empty = titleRules.filter(r => !r.keyword).length;
+  const empty = titleRules.filter(r => !(r.keywords || []).some(Boolean)).length;
   const emptyNote = empty ? `<span style="color:var(--accent2)">　※キーワード未入力の ${empty}件 は適用されません</span>` : '';
-  const head = `<div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:8px">ルール ${titleRules.length}件（上から順に判定し、最初に一致した1件だけを適用）${emptyNote}</div>`;
+  const head = `<div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:8px">出力文言 ${titleRules.length}件（上から順に判定し、最初に一致した1件だけを適用）${emptyNote}</div>`;
   el.innerHTML = head + rows
     + `<button class="btn btn-secondary" style="font-size:0.8rem;padding:6px 12px;margin-top:4px" onclick="titleRuleAdd()">＋ ルールを追加</button>`
     + `<p class="hint" style="margin-top:8px;margin-bottom:0">上から順に判定し、最初に一致した1件だけを適用します。どれにも一致しない場合は下の「人名→来客あり」が働きます。<br>
@@ -4183,7 +4228,7 @@ function renderTitleRuleSection() {
   renderTitleRuleEditView();
   // 折りたたんだ状態でも件数が分かるよう、見出しにも表示
   const cnt = document.getElementById('titleRuleCount');
-  if (cnt) cnt.textContent = `（${titleRules.filter(r => r.keyword).length}件）`;
+  if (cnt) cnt.textContent = `（${titleRules.filter(r => (r.keywords || []).some(Boolean)).length}件）`;
 }
 function toggleTitleRuleEdit() {
   titleRuleEditMode = !titleRuleEditMode;
@@ -4197,10 +4242,31 @@ function titleRuleEdit(i, key, val) {
   titleRules[i][key] = (typeof val === 'string') ? val.trim() : !!val;
   if (key === 'label' && !titleRules[i].label) titleRules[i].label = '予定あり';
   saveTitleRules();
-  if (key !== 'keyword' && key !== 'label') renderTitleRuleEditView();  // 文字入力中は再描画しない
+  if (key !== 'label') renderTitleRuleEditView();   // 文字入力中は再描画しない（フォーカスが外れるため）
+}
+// カード内のキーワード操作
+function titleRuleKwEdit(i, j, val) {
+  const r = titleRules[i];
+  if (!r) return;
+  if (!Array.isArray(r.keywords)) r.keywords = [];
+  r.keywords[j] = String(val || '').trim();
+  saveTitleRules();
+}
+function titleRuleKwAdd(i) {
+  const r = titleRules[i];
+  if (!r) return;
+  if (!Array.isArray(r.keywords)) r.keywords = [];
+  r.keywords.push('');
+  saveTitleRules(); renderTitleRuleEditView();
+}
+function titleRuleKwRemove(i, j) {
+  const r = titleRules[i];
+  if (!r || !Array.isArray(r.keywords)) return;
+  r.keywords.splice(j, 1);
+  saveTitleRules(); renderTitleRuleSection();
 }
 function titleRuleAdd() {
-  titleRules.push({ keyword: '', label: '予定あり', hitoOnly: false, note: false });
+  titleRules.push({ label: '', keywords: [''], hitoOnly: false, note: false });
   saveTitleRules(); renderTitleRuleSection();
 }
 function titleRuleRemove(i) { titleRules.splice(i, 1); saveTitleRules(); renderTitleRuleSection(); }
@@ -4305,7 +4371,7 @@ function exportSettings() {
       titleRules: titleRules,
       hitoConvert: CONVERT_HITO,
       // 旧バージョンで読み込めるよう「予定あり」変換分だけ従来キーで併記
-      convertToYotei: titleRules.filter(r => r.keyword && r.label === '予定あり').map(r => r.keyword),
+      convertToYotei: titleRules.filter(r => r.label === '予定あり').flatMap(r => (r.keywords || []).filter(Boolean)),
       otOkKeywords: OT_OK_KEYWORDS,
       drivers: drivers,
       presetCalId: localStorage.getItem('gcal_preset_calid') || '',
@@ -4350,9 +4416,9 @@ function importSettings(file) {
       }
       // タイトル変換ルール（新形式を優先。旧「予定あり変換キーワード」も読める）
       if (Array.isArray(s.titleRules)) {
-        titleRules = s.titleRules.map(migrateTitleRule); saveTitleRules();
+        titleRules = normalizeTitleRules(s.titleRules); saveTitleRules();
       } else if (Array.isArray(s.convertToYotei)) {
-        titleRules = s.convertToYotei.filter(k => k).map(migrateTitleRule); saveTitleRules();
+        titleRules = normalizeTitleRules(s.convertToYotei); saveTitleRules();
       }
       if (typeof s.hitoConvert === 'boolean') {
         CONVERT_HITO = s.hitoConvert;
@@ -5578,7 +5644,7 @@ async function exportExcel(opts = {}) {
         const m = matchTitleRule(rawSummary, main);
         if (m && m.type === 'rule') {
           const only = m.rule.hitoOnly ? '・人名あり' : '';
-          addProcLog('🔄', `${dateTag}　「${rawSummary.slice(0,30)}」→「${m.label}」（キーワード「${m.rule.keyword}」に一致${only}）`);
+          addProcLog('🔄', `${dateTag}　「${rawSummary.slice(0,30)}」→「${m.label}」（キーワード「${m.keyword}」に一致${only}）`);
           if (rawLoc.trim()) {
             effectiveLoc = cityFromLoc(rawLoc) ? cityFromLoc(rawLoc) + '内' : cleanLoc;
             displayMain = m.label;
@@ -6044,6 +6110,9 @@ window.titleRuleAdd    = titleRuleAdd;
 window.titleRuleRemove = titleRuleRemove;
 window.titleRuleEdit   = titleRuleEdit;
 window.titleRuleMove   = titleRuleMove;
+window.titleRuleKwEdit   = titleRuleKwEdit;
+window.titleRuleKwAdd    = titleRuleKwAdd;
+window.titleRuleKwRemove = titleRuleKwRemove;
 window.saveHitoConvert = saveHitoConvert;
 window.runTitleRuleTest = runTitleRuleTest;
 window.toggleOtOkKwEdit = toggleOtOkKwEdit;
