@@ -836,7 +836,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 <div class="header">
   <div class="header-row">
     <h1>Googleカレンダー → Excel 変換<span class="header-suffix">（Webアプリ）</span></h1>
-    <div class="header-version" onclick="showChangelog()" title="クリックで更新履歴を表示">v1.10.1&nbsp;&nbsp;•&nbsp;&nbsp;2026-08-08</div>
+    <div class="header-version" onclick="showChangelog()" title="クリックで更新履歴を表示">v1.10.2&nbsp;&nbsp;•&nbsp;&nbsp;2026-08-08</div>
   </div>
   <p>Googleカレンダーの予定を週間スケジュール表（15分単位）としてExcelに出力します</p>
   <div id="dqStatusBar" style="display:none" onclick="showAchievementsModal()" title="クリックで「ぼうけんのきろく」を開く"></div>
@@ -1118,7 +1118,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   </details>
 
   <details class="config-section">
-    <summary>🔒 タイトル変換ルール（プライバシー配慮）</summary>
+    <summary>🔒 タイトル変換ルール（プライバシー配慮）<span id="titleRuleCount" style="font-size:0.78rem;color:var(--text-muted);margin-left:6px;font-weight:400"></span></summary>
     <div class="config-section-body">
       <div class="config-section-head">
         <button class="btn btn-secondary" id="titleRuleEditBtn" onclick="toggleTitleRuleEdit()" style="font-size:0.78rem;padding:6px 12px">✏️ 編集する</button>
@@ -3269,6 +3269,12 @@ function setupLogoSecret() {
 // ── 更新履歴 ──────
 const CHANGELOG = [
   {
+    version: '1.10.2', date: '2026-08-08',
+    changes: [
+      { type: 'feature', text: 'タイトル変換ルールの一覧を見やすく改善。各ルールを枠で囲み、①②…の番号で判定順を明示しました（画面が狭くて折り返しても、どこまでが1つのルールか分かります）。設定件数も見出しに表示され、先頭の↑・末尾の↓は押せないことが一目で分かるようにしました' },
+    ],
+  },
+  {
     version: '1.10.1', date: '2026-08-08',
     changes: [
       { type: 'feature', text: 'タイトル変換ルールを分かりやすく改善。「人名のみ」チェックボックスを「すべての予定／人名がある予定だけ」の選択式に変更し、行が「〇〇を含む・△△だけ → □□と表示」と文章として読めるようにしました' },
@@ -4131,28 +4137,43 @@ function renderTitleRuleEditView() {
   const inputStyle = 'margin-bottom:0;font-size:0.85rem;padding:4px 8px;min-width:0';
   const btnStyle = 'font-size:0.78rem;padding:4px 8px';
   const selStyle = 'padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.8rem';
-  const rows = titleRules.map((r, i) => `
-    <div style="display:flex;gap:5px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
-      <input type="text" value="${escHtml(r.keyword)}" placeholder="キーワード（例：訪問）"
-        onchange="titleRuleEdit(${i},'keyword',this.value)" style="flex:1 1 100px;${inputStyle}">
-      <span style="color:var(--text-muted);font-size:0.78rem;white-space:nowrap">を含む</span>
-      <select title="このルールを適用する範囲" onchange="titleRuleEdit(${i},'hitoOnly',this.value==='hito')" style="${selStyle}">
-        <option value="" ${!r.hitoOnly?'selected':''}>すべての予定</option>
-        <option value="hito" ${r.hitoOnly?'selected':''}>人名がある予定だけ</option>
-      </select>
-      <span style="color:var(--text-muted);font-size:0.8rem">→</span>
-      <input type="text" value="${escHtml(r.label)}" placeholder="表示名（例：訪問あり）"
-        onchange="titleRuleEdit(${i},'label',this.value)" style="flex:1 1 95px;${inputStyle}">
-      <span style="color:var(--text-muted);font-size:0.78rem;white-space:nowrap">と表示</span>
-      <label title="場所が未設定のとき「※場所・送迎等確認中」を付けます"
-        style="display:flex;align-items:center;gap:3px;font-size:0.78rem;white-space:nowrap;cursor:pointer">
-        <input type="checkbox" ${r.note?'checked':''} onchange="titleRuleEdit(${i},'note',this.checked)" style="width:auto;margin:0">場所なしは注記
-      </label>
-      <button class="btn btn-secondary" title="上へ（先に判定）" onclick="titleRuleMove(${i},-1)" style="${btnStyle}">↑</button>
-      <button class="btn btn-secondary" title="下へ（後で判定）" onclick="titleRuleMove(${i},1)" style="${btnStyle}">↓</button>
-      <button class="btn btn-secondary" onclick="titleRuleRemove(${i})" style="${btnStyle}">削除</button>
-    </div>`).join('');
-  el.innerHTML = rows
+  const CIRCLED = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳';
+  const last = titleRules.length - 1;
+  // 1ルール＝1カード。折り返しても境界が分かるよう枠で囲み、番号で判定順を示す
+  const rows = titleRules.map((r, i) => {
+    const dim = (off) => off ? 'opacity:0.3;cursor:not-allowed' : '';
+    return `
+    <div style="border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:8px;background:var(--surface)">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+        <span style="font-size:0.78rem;color:var(--accent);white-space:nowrap">${CIRCLED[i] || (i+1)} ${i+1}番目に判定</span>
+        <span style="flex:1"></span>
+        <button class="btn btn-secondary" title="上へ（先に判定）" onclick="titleRuleMove(${i},-1)" ${i===0?'disabled':''} style="${btnStyle};${dim(i===0)}">↑</button>
+        <button class="btn btn-secondary" title="下へ（後で判定）" onclick="titleRuleMove(${i},1)" ${i===last?'disabled':''} style="${btnStyle};${dim(i===last)}">↓</button>
+        <button class="btn btn-secondary" title="このルールを削除" onclick="titleRuleRemove(${i})" style="${btnStyle}">削除</button>
+      </div>
+      <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
+        <input type="text" value="${escHtml(r.keyword)}" placeholder="キーワード（例：訪問）"
+          onchange="titleRuleEdit(${i},'keyword',this.value)" style="flex:1 1 100px;${inputStyle}">
+        <span style="color:var(--text-muted);font-size:0.78rem;white-space:nowrap">を含む</span>
+        <select title="このルールを適用する範囲" onchange="titleRuleEdit(${i},'hitoOnly',this.value==='hito')" style="${selStyle}">
+          <option value="" ${!r.hitoOnly?'selected':''}>すべての予定</option>
+          <option value="hito" ${r.hitoOnly?'selected':''}>人名がある予定だけ</option>
+        </select>
+        <span style="color:var(--text-muted);font-size:0.8rem">→</span>
+        <input type="text" value="${escHtml(r.label)}" placeholder="表示名（例：訪問あり）"
+          onchange="titleRuleEdit(${i},'label',this.value)" style="flex:1 1 95px;${inputStyle}">
+        <span style="color:var(--text-muted);font-size:0.78rem;white-space:nowrap">と表示</span>
+        <label title="場所が未設定のとき「※場所・送迎等確認中」を付けます"
+          style="display:flex;align-items:center;gap:3px;font-size:0.78rem;white-space:nowrap;cursor:pointer">
+          <input type="checkbox" ${r.note?'checked':''} onchange="titleRuleEdit(${i},'note',this.checked)" style="width:auto;margin:0">場所なしは注記
+        </label>
+      </div>
+    </div>`;
+  }).join('');
+  const empty = titleRules.filter(r => !r.keyword).length;
+  const emptyNote = empty ? `<span style="color:var(--accent2)">　※キーワード未入力の ${empty}件 は適用されません</span>` : '';
+  const head = `<div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:8px">ルール ${titleRules.length}件（上から順に判定し、最初に一致した1件だけを適用）${emptyNote}</div>`;
+  el.innerHTML = head + rows
     + `<button class="btn btn-secondary" style="font-size:0.8rem;padding:6px 12px;margin-top:4px" onclick="titleRuleAdd()">＋ ルールを追加</button>`
     + `<p class="hint" style="margin-top:8px;margin-bottom:0">上から順に判定し、最初に一致した1件だけを適用します。どれにも一致しない場合は下の「人名→来客あり」が働きます。<br>
        「人名がある予定だけ」＝タイトルに「○○さん・○○氏・○○様」が入っている予定にだけ適用します（例：「田中様訪問」は変換、「工場訪問」はそのまま）。</p>`;
@@ -4160,6 +4181,9 @@ function renderTitleRuleEditView() {
 function renderTitleRuleSection() {
   renderTitleRuleReadView();
   renderTitleRuleEditView();
+  // 折りたたんだ状態でも件数が分かるよう、見出しにも表示
+  const cnt = document.getElementById('titleRuleCount');
+  if (cnt) cnt.textContent = `（${titleRules.filter(r => r.keyword).length}件）`;
 }
 function toggleTitleRuleEdit() {
   titleRuleEditMode = !titleRuleEditMode;
