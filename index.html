@@ -29,6 +29,7 @@
   --danger: #f87171;
   --code-bg: #2a2a2a;
   --picker-filter: invert(1) opacity(0.6);   /* 日付欄のカレンダーアイコンを暗背景で見えるように */
+  --test-badge-fg: #c77700;  /* 「テスト運用中」の札の文字色 */
 }
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
@@ -37,6 +38,7 @@
     --accent: #15803d; --accent-hover: #166534; --on-accent: #ffffff; --accent2: #0e7490;
     --text: #1f2328; --text-muted: #5b6573; --danger: #c62828; --code-bg: #e8ebef;
     --picker-filter: opacity(0.7);
+    --test-badge-fg: #8a5300;  /* ライト背景では濃くして読みやすく */
   }
 }
 :root[data-theme="light"] {
@@ -45,6 +47,7 @@
   --accent: #15803d; --accent-hover: #166534; --on-accent: #ffffff; --accent2: #0e7490;
   --text: #1f2328; --text-muted: #5b6573; --danger: #c62828; --code-bg: #e8ebef;
   --picker-filter: opacity(0.7);
+  --test-badge-fg: #8a5300;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -782,7 +785,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 .ws-table th, .ws-table td { white-space: nowrap; }
 
 /* 📈 振り返り（テスト運用中） */
-.test-badge { display: inline-block; margin-left: 5px; padding: 0 6px; border-radius: 8px; font-size: 0.68rem; font-weight: 600; letter-spacing: 0; background: rgba(255,165,0,0.18); color: #c77700; border: 1px solid rgba(255,165,0,0.5); vertical-align: middle; text-transform: none; font-family: 'Noto Sans JP', sans-serif; }
+.test-badge { display: inline-block; margin-left: 5px; padding: 0 6px; border-radius: 8px; font-size: 0.68rem; font-weight: 600; letter-spacing: 0; background: rgba(255,165,0,0.18); color: var(--test-badge-fg); border: 1px solid rgba(255,165,0,0.5); vertical-align: middle; text-transform: none; font-family: 'Noto Sans JP', sans-serif; }
 .test-note { margin-bottom: 14px; padding: 10px 14px; border-left: 3px solid #ffa500; background: rgba(255,165,0,0.1); border-radius: 4px; font-size: 0.84rem; line-height: 1.6; color: var(--text); }
 .rv-block { margin-top: 14px; }
 .rv-table td:first-child { color: var(--text); }
@@ -975,7 +978,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   <div class="header-row">
     <h1>Googleカレンダー → Excel 変換<span class="header-suffix">（Webアプリ）</span></h1>
     <div class="header-actions">
-      <div class="header-version" onclick="showChangelog()" title="クリックで更新履歴を表示">v1.16.2&nbsp;&nbsp;•&nbsp;&nbsp;2026-09-22</div>
+      <div class="header-version" onclick="showChangelog()" title="クリックで更新履歴を表示">v1.16.4&nbsp;&nbsp;•&nbsp;&nbsp;2026-09-23</div>
       <button type="button" class="hdr-btn" id="themeBtn" onclick="toggleTheme()" title="ダーク／ライトを切り替え">🌙</button>
       <button type="button" class="hdr-btn" id="navReviewBtn" onclick="toggleView('review')" title="月別の振り返り（テスト運用中）">📈 振り返り<span class="test-badge">テスト</span></button>
       <button type="button" class="hdr-btn" id="navSettingsBtn" onclick="toggleView('settings')" title="一度決めたらあまり変えない設定">⚙ 設定</button>
@@ -1622,10 +1625,10 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
           </ol>
           <h4>タブの内容</h4>
           <ul>
-            <li><strong>概要</strong>：予定の総数・業務報告（項目数）・段取り対象を数字のカードで表示し、前月（四半期なら前四半期）と前年同期との増減を ▲▼ で示します。その下に<strong>注目ポイント</strong>（前年同期との大きな差、90日以上報告のない課、前年同時期の行事のうち今年まだ無いもの）を自動で表示し、「見る →」で該当のタブへ移れます。月別の推移（今年度と前年度の棒グラフ）と、四半期・年度累計の詳細（開いて見る）もあります</li>
-            <li><strong>業務報告</strong>：説明欄から課・案件・担当者・内線・上席を読み取り、課ごとに項目数・最終報告日・直近の案件を並べます。課の行を開くと、報告ごとの内容が見られます。2回以上報告のある課を上に、<strong>報告1回の課は最下部にまとめて</strong>表示します（回数は報告の回数。同じ日の報告で複数項目あっても1回）。同じ課・同じ案件の2回目以降には「再」が付きます</li>
+            <li><strong>概要</strong>：予定の総数・業務報告（項目数）・段取り対象を数字のカードで表示し、前月（四半期なら前四半期）と前年同期との増減を ▲▼ で示します。その下に<strong>注目ポイント</strong>（前年同期との大きな差、2回以上報告のある課のうち90日以上報告のない課、前年同時期の行事のうち今年まだ無いもの）を自動で表示し、「見る →」で該当のタブへ移れます。月別の推移（今年度と前年度の棒グラフ）と、四半期・年度累計の詳細（開いて見る）もあります</li>
+            <li><strong>業務報告</strong>：説明欄から課・案件・担当者・内線・上席を読み取り、課ごとに報告回数・最終報告日・直近の案件を並べます。課の行を開くと、報告ごとの内容が見られます。2回以上報告のある課を上に、<strong>報告1回の課は最下部にまとめて</strong>表示します（回数は報告の回数。同じ日の報告で複数項目あっても1回）。同じ課・同じ案件の2回目以降には「再」が付きます</li>
             <li><strong>段取り</strong>：段取り対象の予定を日付順に一覧（場所・担当課・担当者・内線つき。月や年度で見るときは月ごとに区切ります）</li>
-            <li><strong>前年比較</strong>：前年の同じ時期にあった段取り対象の予定を1件ずつ、今年の同じ日付の<strong>前後1か月</strong>で探します。見つからないものを「今年まだ登録がない行事（要確認）」として、「前年の日付 → 今年の目安（前年と同じ曜日の日）」とともにカードで表示します。見つかったものは「今年も登録済み」（開いて見る）に入ります。タイトルは年度・回数・日付・かっこ書き（例：「令和7年度」「第3回」）を除いて比べるので、表記が少し変わっても同じ行事と判定できます</li>
+            <li><strong>前年比較</strong>：前年の同じ時期にあった段取り対象の予定を1件ずつ、今年の同じ日付の<strong>前後1か月</strong>で探します。見つからないものを「今年まだ登録がない行事（要確認）」として、「前年の日付 → 今年の目安（前年と同じ曜日の日）」とともにカードで表示します。見つかったものは「今年も登録済み」（開いて見る）に入ります。タイトルは年度・回数・日付・かっこ書き・法人の種類（例：「令和7年度」「R7」「第3回」「株式会社」）を除いて比べるので、表記が少し変わっても同じ行事と判定できます。「取締役会」「総会」など段取り対象のキーワードが両方に入っているときは、それを除いた部分（会社名・団体名など）で比べるので、「○○株式会社取締役会」と「△△株式会社取締役会」は別の行事として扱います</li>
             <li><strong>検索</strong>：タイトル・場所・説明欄をキーワードで検索（スペースで区切ると、すべてを含む予定に絞り込み）。期間は上の操作バーで切り替えます</li>
           </ul>
           <p>一覧のタブでは、右上の「⬇ CSV」で Excel で開けるファイルに保存できます。</p>
@@ -1635,7 +1638,10 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
             <li>「○○部長　○○課」「○○部長、○○次長　○○課」のように上席が付いていても、<strong>○○課</strong>としてまとめます（上席は記録として表示）</li>
             <li>「◆◆部長」のように<strong>役職名だけの項目は、集計から除きます</strong>（今週のまとめの業務報告数も同じ）</li>
             <li>①より前に書かれた前置き（例：「報告事項」）は項目として数えません</li>
+            <li>内線は全角数字（例：（１２３４））でも読み取ります</li>
+            <li>課名が無く「総務部長（組織改正について）」のように役職名と案件だけの項目は、<strong>役職名（総務部長）を課の代わりにして</strong>まとめます</li>
             <li>課名が読み取れない項目は「（課名なし）」にまとめ、原文を表示します</li>
+            <li>CSV では、「=」「+」「-」「@」で始まる文字の先頭に「'」を付けています（Excel が数式として扱わないように）</li>
           </ul>
           <h4>段取り対象とは</h4>
           <p>タイトルに「大会・式典・総会・懇親会・会議・表彰・祝賀・開会・記念・レセプション・取締役会」などのキーワードを含む予定です（<strong>⚙設定 ＞ 📈 振り返り</strong> で変更できます）。「業務報告」「移動」「予定あり」「ブロック」を含む予定は対象外です。説明欄に「〇〇課　〇〇係長（1111）」のような担当者表記もある予定は ★（確度高）として表示します。</p>
@@ -2580,9 +2586,13 @@ const RV_DANDORI_DEFAULT = ['大会', '式典', '総会', '懇親会', '会議',
 // キーワードを含んでも対象にしない予定（業務報告は説明欄の書き方が担当者表記と同じなので必ず外す）
 const RV_DANDORI_EXCLUDE = ['業務報告', '移動', '予定あり', 'ブロック'];
 
+// 全角数字（１２３４）を半角にそろえる。内線を全角で書いても読み取れるように
+function rvHalfDigits(s) {
+  return String(s || '').replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+}
 // 説明欄に「〇〇課　〇〇係長（1111）」のような担当者表記があるか（段取り対象の確からしさを上げる補足情報）
 function rvHasContact(desc) {
-  const d = String(desc || '');
+  const d = rvHalfDigits(desc);
   return /(課|室|センター|事務所)/.test(d) && /[（(]\s*\d{3,5}\s*[)）]/.test(d);
 }
 // 段取り対象の判定。hit=対象か、strong=担当者表記もあり確からしい、kw=一致したキーワード
@@ -2605,15 +2615,26 @@ const RV_SENIOR_HEAD_RE = /^(.*(?:部長|次長|局長|理事|参事|審議監|�
 function rvPlainText(s) {
   return String(s || '').replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&');
 }
+// 最初のかっこ書きを、中の入れ子（例「（病院の経営について（第2期））」）ごと取り出す。無ければ null
+function rvFirstParen(t) {
+  const start = t.search(/[（(]/);
+  if (start < 0) return null;
+  let depth = 0;
+  for (let i = start; i < t.length; i++) {
+    if (t[i] === '（' || t[i] === '(') depth++;
+    else if (t[i] === '）' || t[i] === ')') { depth--; if (depth === 0) return { index: start, length: i - start + 1, inner: t.slice(start + 1, i) }; }
+  }
+  return null;   // 閉じかっこが足りない書き方は、案件として扱わない
+}
 function rvParseItem(text) {
   const raw = String(text || '').replace(/\s+$/, '').replace(/^[\s　]+/, '');
-  let t = raw;
+  let t = rvHalfDigits(raw);   // 読み取りは半角にそろえて行う（原文 raw はそのまま残す）
   let ext = '';
   const mExt = t.match(/[（(]\s*(\d{3,5})\s*[)）]\s*$/);            // 末尾の（1111）＝内線
   if (mExt) { ext = mExt[1]; t = t.slice(0, mExt.index).trim(); }
   let subject = '', before = t, after = '';
-  const mSub = t.match(/[（(]([^（）()]+)[)）]/);                     // 最初のかっこ＝案件
-  if (mSub) { subject = mSub[1].trim(); before = t.slice(0, mSub.index); after = t.slice(mSub.index + mSub[0].length); }
+  const mSub = rvFirstParen(t);                                      // 最初のかっこ＝案件
+  if (mSub) { subject = mSub.inner.trim(); before = t.slice(0, mSub.index); after = t.slice(mSub.index + mSub.length); }
   // 区切りは空白と読点（「○○部長、○○次長　○○課」の形に対応）
   const tokens = before.split(/[\s　、,，]+/).filter(Boolean);
   let ka = '';
@@ -2629,13 +2650,19 @@ function rvParseItem(text) {
     const m = ka.match(RV_SENIOR_HEAD_RE);
     if (m && m[0].length < ka.length) { seniors.push(m[1]); ka = ka.slice(m[0].length); }
   }
+  // 課名が無く「役職（案件）」だけの項目（例「総務部長（組織改正について）」）は、部長などが自ら報告したものとみなし、
+  // 役職名を課の代わりにしてまとめる（「課名なし」に埋もれないように）。上席欄は重複するので空にする
+  let bySenior = false;
+  if (!ka && subject && seniors.length && tokens.every(tk => seniors.includes(tk))) {
+    ka = seniors.join('、'); seniors.length = 0; bySenior = true;
+  }
   const senior = seniors.join('、');
   // 役職名だけの項目（例「◆◆部長」）：課も案件も無く役職だけ → 集計の対象外にする印
   const titleOnly = !ka && !subject && tokens.length > 0 && tokens.every(tk => RV_SENIOR_RE.test(tk));
   // 担当者：案件のかっこの後ろ。かっこが無い書き方（○○課　○○係長）なら、課・上席以外の語
   //   ただし内線も無い文（例「○○課の説明」）は担当者の書き方ではないので空欄にし、原文だけ残す
   const staff = mSub ? after.trim() : (ext ? tokens.filter(x => x !== ka && !seniors.includes(x)).join(' ') : '');
-  return { senior, ka, subject, staff, ext, raw, titleOnly };
+  return { senior, ka, subject, staff, ext, raw, titleOnly, bySenior };
 }
 // 業務報告の説明欄 → 項目の配列（①②…で区切る。番号が無ければ全体で1項目）
 function rvParseReportItems(desc) {
@@ -2648,7 +2675,7 @@ function rvParseReportItems(desc) {
 }
 // 段取り対象の担当者表記「○○課　○○係長（1111）」を、説明欄の中から1つ取り出す（無ければ null）
 function rvParseContact(desc) {
-  const lines = String(desc || '').split(/\n/);
+  const lines = rvHalfDigits(desc).split(/\n/);
   for (const line of lines) {
     if (!/(課|室|センター|事務所)/.test(line) || !/[（(]\s*\d{3,5}\s*[)）]/.test(line)) continue;
     const it = rvParseItem(line);
@@ -2662,11 +2689,14 @@ function rvParseContact(desc) {
 function rvNormTitle(title) {
   let t = String(title || '').normalize('NFKC');          // 全角英数→半角にそろえる
   t = t.replace(/[（(][^）)]*[）)]/g, '');                  // かっこ書き（会場・補足など）
-  t = t.replace(/(令和|平成|R|H)\s*\d+\s*年度?/g, '')
+  t = t.replace(/(令和|平成)\s*(\d+|元)\s*年度?/g, '')
+       .replace(/(?<![A-Za-z])[RH]\s*(\d{1,2}|元)(\s*年度?)?(?!\d)/g, '')   // 「R7」「R7年度」などの略記
        .replace(/\d{4}\s*年度?/g, '')
        .replace(/第\s*\d+\s*(回|期|次)/g, '')
        .replace(/\d+\s*月(\s*\d+\s*日)?/g, '')
-       .replace(/\d+\s*(回目|周年)/g, '');
+       .replace(/\d+\s*(回目|周年)/g, '')
+       // 法人の種類（どの団体にも付くため、似ている度合いを押し上げてしまう）。「(株)」はかっこ書きとして上で除去済み
+       .replace(/株式会社|有限会社|合同会社|(一般|公益)(社団|財団)法人|社会福祉法人|特定非営利活動法人|NPO法人/g, '');
   return t.replace(/[\s　・,，、。.:：\-－―〜~｜|「」『』【】\[\]]/g, '');
 }
 // 2文字ずつの組の重なり（0〜1）。表記ゆれ（語順・一部の言い換え）に強い
@@ -2682,9 +2712,21 @@ function rvTitleSim(a, b) {
   return 2 * hit / (x.length + y.length);
 }
 const RV_MATCH_MIN = 0.6;   // これ以上似ていれば同じ行事とみなす
+// 段取り対象のキーワード（「取締役会」「総会」など）は多くの行事に共通して入るため、
+// 両方に同じキーワードがあるときは、それを除いた残り（「○○株式会社」など行事を区別する部分）で比べる。
+//   例：「◇◇株式会社取締役会」と「□□株式会社取締役会」を同じ行事とみなさないように。
+//   どちらかの残りが空になる（タイトルがキーワードだけ）ときは、タイトル全体で比べる
+function rvEventSim(normA, normB, keywords) {
+  let a = normA, b = normB;
+  for (const k of [...(keywords || [])].sort((x, y) => y.length - x.length)) {   // 長いキーワードから外す（「総会」より「取締役会」を先に）
+    const nk = rvNormTitle(k);
+    if (nk && a.includes(nk) && b.includes(nk)) { a = a.split(nk).join(''); b = b.split(nk).join(''); }
+  }
+  return a && b ? rvTitleSim(a, b) : rvTitleSim(normA, normB);
+}
 // 前年の段取り対象（lastYearDandori）を1件ずつ、今年の同じ日付の前後1か月（thisYearEvents）で探す
 //   戻り値：{ ev, norm, match: 今年の予定 | null, sim }
-function rvCompareLastYear(lastYearDandori, thisYearEvents) {
+function rvCompareLastYear(lastYearDandori, thisYearEvents, keywords) {
   const cur = thisYearEvents.map(ev => ({ ev, norm: rvNormTitle(ev.summary), t: new Date(ev.start?.dateTime || ev.start?.date + 'T00:00:00') }));
   return lastYearDandori.map(ev => {
     const d = new Date(ev.start?.dateTime || ev.start?.date + 'T00:00:00');
@@ -2695,7 +2737,7 @@ function rvCompareLastYear(lastYearDandori, thisYearEvents) {
     let best = null, bestSim = 0;
     for (const c of cur) {
       if (c.t < from || c.t > to) continue;
-      const sim = rvTitleSim(norm, c.norm);
+      const sim = rvEventSim(norm, c.norm, keywords);
       // 同じくらい似ているなら、前年の日付に近いほうを選ぶ
       if (sim > bestSim || (sim === bestSim && best && Math.abs(c.t - center) < Math.abs(best.t - center))) { best = c; bestSim = sim; }
     }
@@ -2706,8 +2748,13 @@ function rvCompareLastYear(lastYearDandori, thisYearEvents) {
 function rvSameWeekdayNextYear(d) { const x = new Date(d); x.setDate(x.getDate() + 364); return x; }
 
 // CSV（Excelで文字化けしないよう先頭にBOMを付ける前提の本文）
+//   「=」「+」「-」「@」で始まる文字は Excel が数式として扱うため、先頭に「'」を付けて文字のまま開かせる
 function rvToCsv(headers, rows) {
-  const q = v => { const s = String(v ?? ''); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  const q = v => {
+    let s = String(v ?? '');
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+    return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
   return [headers, ...rows].map(r => r.map(q).join(',')).join('\r\n');
 }
 
@@ -2837,6 +2884,25 @@ for (const b of Object.values(EV_XF)) {
 
 
 const CHANGELOG = [
+  {
+    version: '1.16.4', date: '2026-09-23',
+    changes: [
+      { type: 'change', text: '【テスト運用中】振り返りの業務報告で、課名が無く「総務部長（組織改正について）」のような項目は、役職名（総務部長）を課の代わりにしてまとめるようにしました' },
+      { type: 'change', text: '【テスト運用中】概要の注目ポイント「90日以上報告のない課」は、2回以上報告のある課だけを対象にしました（1回きりの課で件数が膨らまないように）' },
+      { type: 'fix', text: '【テスト運用中】振り返りの概要で、月や期間を続けて切り替えたときに、前の期間の照合結果が表示されることがある問題を修正しました' },
+      { type: 'fix', text: '【テスト運用中】振り返りのCSVで、「=」「+」「-」「@」で始まる予定名が Excel で数式として扱われないようにしました' },
+      { type: 'fix', text: 'ライト表示で「テスト」の札の文字が薄く読みにくかったのを修正しました' },
+    ],
+  },
+  {
+    version: '1.16.3', date: '2026-09-23',
+    changes: [
+      { type: 'fix', text: '今週のまとめの「開始まで○日」を、今日から数えた日数で表示するようにしました（金曜に見ると翌週が「7日」と出ていました）' },
+      { type: 'fix', text: '「全期間」でダウンロードしたあと、次の出力で「前回の出力からの変化」が出なくなることがある問題を修正しました' },
+      { type: 'fix', text: '【テスト運用中】振り返りで、全角数字の内線（例：（１２３４））を読み取れるようにしました（段取り対象の★も付くようになります）。案件名のかっこの中にさらにかっこがある場合の読み違いも直しました' },
+      { type: 'fix', text: '【テスト運用中】前年との比較で、「○○株式会社取締役会」と「△△株式会社取締役会」のように会社名などだけが違う行事を、同じ行事とみなさないようにしました。「R7」「令和元年度」のような年度の書き方や、「株式会社」などの法人の種類も除いて比べます' },
+    ],
+  },
   {
     version: '1.16.2', date: '2026-09-22',
     changes: [
@@ -5134,6 +5200,7 @@ function weekMetrics(events, ws) {
 // 前回ダウンロードした内容との比較（D3）。週ごとに予定の「指紋」をブラウザに保存しておく
 const SNAP_KEY = 'gcal_export_snapshots';
 const SNAP_KEEP = 30;   // 保存しておく週の数（古いものから捨てる）
+const SUMMARY_WEEKS = 6;   // まとめに表示する週の数（全期間などで長くなりすぎないよう最大6週）。記録もこの週数だけ残す
 function loadSnapshots() { try { return JSON.parse(localStorage.getItem(SNAP_KEY) || '{}') || {}; } catch (e) { return {}; } }
 // 予定の指紋。出力処理はタイトル等の HTML を除去して書き換えるため、比較も除去後の値で行う
 function eventPrint(ev) {
@@ -5152,10 +5219,12 @@ function eventsOfWeek(events, ws) {
   });
 }
 // ダウンロード成功時に、出力した各週の内容を保存する
+//   保存するのは、まとめで比べる先頭の週（最大6週）だけ。全期間（52週）で全部保存すると、
+//   上限30週を超えた分を捨てるときに直近の週の記録まで消えてしまうため
 function saveExportSnapshots(monday, weeks) {
   const snaps = loadSnapshots();
   const now = new Date().toISOString();
-  for (let w = 0; w < weeks; w++) {
+  for (let w = 0; w < Math.min(weeks, SUMMARY_WEEKS); w++) {
     const ws = new Date(monday); ws.setDate(monday.getDate() + w * 7);
     snaps[toDateStr(ws)] = { savedAt: now, items: eventsOfWeek(fetchedEvents, ws).map(eventPrint) };
   }
@@ -5198,8 +5267,9 @@ function renderWeekSummary(procLogs, monday, weeks) {
   if (!el) return;
   const md = d => `${d.getMonth()+1}/${d.getDate()}`;
   const end = new Date(monday); end.setDate(monday.getDate() + weeks * 7 - 1);
-  const shownWeeks = Math.min(weeks, 6);   // 全期間などで長くなりすぎないよう、表は最大6週
+  const shownWeeks = Math.min(weeks, SUMMARY_WEEKS);   // 全期間などで長くなりすぎないよう、表は最大6週
   const thisMon = thisWeekMonday(); thisMon.setHours(0, 0, 0, 0);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
 
   let html = `<div class="ws-head">📊 ${weeks === 1 ? '今週' : '出力期間'}のまとめ <span class="ws-range">${md(monday)}〜${md(end)}（${weeks}週）</span></div>`;
 
@@ -5231,8 +5301,9 @@ function renderWeekSummary(procLogs, monday, weeks) {
   for (let w = 0; w < shownWeeks; w++) {
     const ws = new Date(monday); ws.setDate(monday.getDate() + w * 7);
     const m = weekMetrics(fetchedEvents, ws);
-    const days = Math.round((ws - thisMon) / 86400000);
-    const state = days < 0 ? '確定' : days === 0 ? '今週' : `開始まで${days}日`;
+    const fromMon = Math.round((ws - thisMon) / 86400000);
+    const toStart = Math.round((ws - today) / 86400000);   // 今日から数えた日数（月曜起点だと金曜に見たとき翌週が「7日」と出ていた）
+    const state = fromMon < 0 ? '確定' : fromMon === 0 ? '今週' : `開始まで${toStart}日`;
     html += `<tr><td>${md(ws)}週</td><td class="ws-muted">${state}</td>${cell(m.total, sTotal)}${cell(m.gyomu, sGyomu)}</tr>`;
   }
   html += '</table></div>';
@@ -6214,6 +6285,7 @@ function renderReview() {
 
 // ── 概要：数字のカード → 注目ポイント → 推移 → 詳細 ─────────
 let rvTrendKey = 'total';
+let rvOverviewSeq = 0;   // 概要を描き直すたびに増やす番号（古い照合結果で上書きしないため）
 function rvSetTrend(k) { rvTrendKey = k; renderReview(); }
 function rvRenderOverview(out, p) {
   const kws = getDandoriKeywords();
@@ -6237,7 +6309,7 @@ function rvRenderOverview(out, p) {
   if (big(cur.total, ly.total, 5)) tips.push({ text: `予定の総数が${p.lyLabel}より <b>${Math.abs(cur.total - ly.total)}件${cur.total > ly.total ? '多い' : '少ない'}</b>` });
   if (big(cur.dandori, ly.dandori, 3)) tips.push({ text: `段取り対象が${p.lyLabel}より <b>${Math.abs(cur.dandori - ly.dandori)}件${cur.dandori > ly.dandori ? '多い' : '少ない'}</b>`, tab: 'dandori' });
   const stale = rvStaleUnits(p.end);
-  if (stale.length) tips.push({ text: `90日以上報告のない課が <b>${stale.length}課</b>（${escHtml(stale.slice(0, 3).join('、'))}${stale.length > 3 ? ' ほか' : ''}）`, tab: 'report' });
+  if (stale.length) tips.push({ text: `2回以上報告のある課のうち、90日以上報告のない課が <b>${stale.length}課</b>（${escHtml(stale.slice(0, 3).join('、'))}${stale.length > 3 ? ' ほか' : ''}）`, tab: 'report' });
   html += '<div class="rv-sec-title">注目ポイント</div><ul class="rv-tips" id="rvTips">'
     + tips.map(t => `<li>${t.text}${t.tab ? ` <a href="#" onclick="rvSetTab('${t.tab}');return false">見る →</a>` : ''}</li>`).join('')
     + '<li class="rv-tip-pending" id="rvTipCompare">前年同時期の行事を照合しています…</li></ul>';
@@ -6284,26 +6356,33 @@ function rvRenderOverview(out, p) {
   out.innerHTML = html;
 
   // 前年比較の未登録件数は、照合が終わってから注目ポイントに書き足す
+  //   照合中に月や期間を切り替えると、あとから届いた古い結果が新しい画面を上書きしてしまうため、番号で見分ける
+  const seq = ++rvOverviewSeq;
   rvComputeCompare(p).then(res => {
     const li = document.getElementById('rvTipCompare');
-    if (!li || rvTab !== 'overview') return;
+    if (!li || rvTab !== 'overview' || seq !== rvOverviewSeq) return;
     if (!res) { li.remove(); return; }
     const n = res.results.filter(x => !x.match).length;
     li.className = '';
     li.innerHTML = n ? `前年同時期の段取り対象のうち <b>${n}件</b> が今年まだ登録されていません <a href="#" onclick="rvSetTab('compare');return false">見る →</a>`
                      : `前年同時期の段取り対象は、すべて今年も登録されています`;
-  }).catch(() => { document.getElementById('rvTipCompare')?.remove(); });
+  }).catch(() => { if (seq === rvOverviewSeq) document.getElementById('rvTipCompare')?.remove(); });
 }
-// 90日以上報告のない課（取得したデータのうち、期間の終わりまでに報告のあった課が対象）
+// 90日以上報告のない課（取得したデータのうち、期間の終わりまでに2回以上報告のあった課が対象）
+//   1回きりの課まで数えると、年度で見たときに件数が膨らむだけで意味が薄いため、定期的に報告している課に絞る
 function rvStaleUnits(end) {
-  const last = new Map();
+  const last = new Map(), times = new Map();
   rvState.events.forEach(ev => {
     if (!(ev.summary || '').includes('業務報告')) return;
     const s = rvEvStart(ev);
     if (s >= end) return;
-    rvParseReportItems(ev.description).forEach(it => { if (it.ka && !it.titleOnly && (!last.has(it.ka) || last.get(it.ka) < s)) last.set(it.ka, s); });
+    const kas = new Set(rvParseReportItems(ev.description).filter(it => it.ka && !it.titleOnly).map(it => it.ka));
+    kas.forEach(ka => {   // 同じ報告に同じ課が複数項目あっても1回
+      times.set(ka, (times.get(ka) || 0) + 1);
+      if (!last.has(ka) || last.get(ka) < s) last.set(ka, s);
+    });
   });
-  return [...last.entries()].filter(([, d]) => (end - d) / 86400000 > 90).sort((a, b) => a[1] - b[1]).map(([k]) => k);
+  return [...last.entries()].filter(([ka, d]) => times.get(ka) >= 2 && (end - d) / 86400000 > 90).sort((a, b) => a[1] - b[1]).map(([k]) => k);
 }
 
 // ── 業務報告の履歴（課ごと） ──────────────────────────
@@ -6363,7 +6442,7 @@ function rvReportHtml(list, p) {
       + '</div></details>';
   }
   if (noka) html += `<details class="rv-more"><summary>${NOKA}（${noka.items.length}項目）</summary><div class="rv-items">${itemRows(noka.items)}</div></details>`;
-  html += `<p class="rv-foot">説明欄の「○○部長　○○課（案件）担当者（内線）」から読み取り、課ごとにまとめています。回数は報告の回数（同じ日の報告で複数項目あっても1回）です。課名が読み取れない項目は「${NOKA}」に入ります。`
+  html += `<p class="rv-foot">説明欄の「○○部長　○○課（案件）担当者（内線）」から読み取り、課ごとにまとめています。回数は報告の回数（同じ日の報告で複数項目あっても1回）です。課名が無く「総務部長（案件）」のような項目は、役職名を課の代わりにしてまとめます。課名が読み取れない項目は「${NOKA}」に入ります。`
     + (excluded ? `役職名だけの項目 ${excluded}件は集計から除いています。` : '') + '</p>';
   return html;
 }
@@ -6435,7 +6514,7 @@ async function rvComputeCompare(p) {
   const lastYear = events.filter(ev => rvInRange(ev, p.ly) && rvDandori(ev, kws).hit).sort((a, b) => rvEvStart(a) - rvEvStart(b));
   const tyStart = shift(p.start, 0, -1);
   const thisYear = events.filter(ev => { const s = rvEvStart(ev); return s >= tyStart && s < loadEnd; });
-  const data = { results: rvCompareLastYear(lastYear, thisYear), kws };
+  const data = { results: rvCompareLastYear(lastYear, thisYear, kws), kws };
   rvCompareCache = { key, data };
   return data;
 }
@@ -6480,7 +6559,7 @@ async function rvRenderCompare(out, p) {
             + `<div class="rv-item-main"><div>${escHtml(rvText(x.match.summary))}</div><div class="rv-meta">前年：${rvMD(rvEvStart(x.ev))} ${escHtml(rvText(x.ev.summary))}</div></div></div>`;
         }).join('') + '</div></details>';
   }
-  html += `<p class="rv-foot">前年の段取り対象1件ごとに、今年の同じ日付の前後1か月で似たタイトルの予定を探します（段取り対象以外の予定も探します）。年度・回数・日付・かっこ書きを除いて比べ、似ている度合いが${Math.round(RV_MATCH_MIN * 100)}%以上なら同じ行事とみなします。表記が大きく変わった行事は「まだ無い」に出ることがあります。「今年の目安」は前年と同じ曜日になる日です。</p>`;
+  html += `<p class="rv-foot">前年の段取り対象1件ごとに、今年の同じ日付の前後1か月で似たタイトルの予定を探します（段取り対象以外の予定も探します）。年度・回数・日付・かっこ書きを除き、両方に入っている段取り対象のキーワード（「取締役会」など）も除いた部分で比べ、似ている度合いが${Math.round(RV_MATCH_MIN * 100)}%以上なら同じ行事とみなします。表記が大きく変わった行事は「まだ無い」に出ることがあります。「今年の目安」は前年と同じ曜日になる日です。</p>`;
   out.innerHTML = html;
 }
 function rvCsvCompare() {
