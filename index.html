@@ -978,7 +978,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   <div class="header-row">
     <h1>Googleカレンダー → Excel 変換<span class="header-suffix">（Webアプリ）</span></h1>
     <div class="header-actions">
-      <div class="header-version" onclick="showChangelog()" title="クリックで更新履歴を表示">v1.16.4&nbsp;&nbsp;•&nbsp;&nbsp;2026-09-23</div>
+      <div class="header-version" onclick="showChangelog()" title="クリックで更新履歴を表示">v1.17.0&nbsp;&nbsp;•&nbsp;&nbsp;2026-09-26</div>
       <button type="button" class="hdr-btn" id="themeBtn" onclick="toggleTheme()" title="ダーク／ライトを切り替え">🌙</button>
       <button type="button" class="hdr-btn" id="navReviewBtn" onclick="toggleView('review')" title="月別の振り返り（テスト運用中）">📈 振り返り<span class="test-badge">テスト</span></button>
       <button type="button" class="hdr-btn" id="navSettingsBtn" onclick="toggleView('settings')" title="一度決めたらあまり変えない設定">⚙ 設定</button>
@@ -1207,6 +1207,8 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     <button class="btn btn-primary btn-dl" id="downloadBtn" onclick="exportExcel()">⬇ Excelをダウンロード</button>
     <button class="btn btn-secondary" id="previewBtn" onclick="previewExcel()">👁 プレビュー</button>
     <button class="btn btn-secondary" id="gyomuhouBtn" onclick="copyGyomuhouEntries()" title="業務報告イベントの時間枠を日付ごとに一覧でコピー">📋 業務報告枠リスト</button>
+    <!-- 段取り管理アプリ連携（テスト運用中）：⚙設定でONにした人にだけ表示 -->
+    <button class="btn btn-secondary" id="dandoriExportBtn" onclick="exportDandoriImport()" hidden title="今日から6か月先までの段取り対象を、段取り管理アプリで取り込めるファイル（JSON）に書き出します">📤 段取り管理アプリ用に書き出し</button>
   </div>
   <div class="log" id="log3"></div>
 </div>
@@ -1345,6 +1347,16 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     </div>
   </details>
 
+  <details class="config-section" id="secDandoriLink">
+    <summary>🔗 段取り管理アプリ連携 <span class="test-badge">テスト</span></summary>
+    <div class="config-section-body">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.9rem">
+        <input type="checkbox" id="dandoriLinkChk" onchange="setDandoriLink(this.checked)" style="width:auto;margin:0">
+        出力画面に「📤 段取り管理アプリ用に書き出し」ボタンを出す
+      </label>
+      <p class="hint" style="margin-top:8px;margin-bottom:0">段取り管理アプリを使っている人向けです。押すと、今日から6か月先までの「段取り対象」（上の 📈 振り返り のキーワードで判定）を、段取り管理アプリの「📥 カレンダーアプリから取り込み」で読み込めるファイル（JSON）に書き出します。<br>Google API で接続したときだけ使えます。ファイルには担当者名・内線が入りますが、ダウンロード先に保存されるだけで、どこにも送信しません。<br>この設定はこのブラウザだけのもので、設定ファイルの保存・復元には含まれません。</p>
+    </div>
+  </details>
   <details class="config-section" id="secApi">
     <summary>🔑 Google API の設定（クライアントID）</summary>
     <div class="config-section-body">
@@ -1504,7 +1516,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
       <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
         <button class="btn btn-secondary" onclick="printManual()" style="font-size:0.82rem;padding:6px 14px">🖨 マニュアルを印刷</button>
       </div>
-      <p class="manual-intro">本アプリの操作・設定・トラブル対処をまとめています（v1.16.2 時点）。初めて使う方や、引き継ぎを受けた方はこちらをご一読ください。各章は見出しをクリックすると開きます。</p>
+      <p class="manual-intro">本アプリの操作・設定・トラブル対処をまとめています（v1.17.0 時点）。初めて使う方や、引き継ぎを受けた方はこちらをご一読ください。各章は見出しをクリックすると開きます。</p>
 
       <!-- 1. このアプリでできること -->
       <details class="manual-section">
@@ -1646,6 +1658,13 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
           <h4>段取り対象とは</h4>
           <p>タイトルに「大会・式典・総会・懇親会・会議・表彰・祝賀・開会・記念・レセプション・取締役会」などのキーワードを含む予定です（<strong>⚙設定 ＞ 📈 振り返り</strong> で変更できます）。「業務報告」「移動」「予定あり」「ブロック」を含む予定は対象外です。説明欄に「〇〇課　〇〇係長（1111）」のような担当者表記もある予定は ★（確度高）として表示します。</p>
           <p class="note">※ 月別サマリーの件数は時刻指定のある予定だけを数えます（終日予定は除く）。複数カレンダーで重複する予定は1件にまとめます。</p>
+          <h4>📤 段取り管理アプリへの書き出し（連携）<span class="test-badge">テスト運用中</span></h4>
+          <ul>
+            <li><strong>⚙設定 ＞ 🔗 段取り管理アプリ連携</strong> をONにした人にだけ、出力画面の ④ に「📤 段取り管理アプリ用に書き出し」ボタンが出ます（既定はOFF。OFFの人の画面は変わりません）</li>
+            <li>押すと、<strong>今日から6か月先まで</strong>の段取り対象を <code>段取り取込用_YYYYMMDD.json</code> に書き出します。タイトル（先頭の「●」も含めそのまま）・日時・場所・担当課・担当者・内線と、Googleの予定IDが入ります</li>
+            <li>段取り管理アプリの「📤 データ ▾」→「📥 カレンダーアプリから取り込み」で読み込むと、🆕新規／似た予定あり／取り込み済み に分けて確認してから登録できます。同じ予定は予定IDで見分けるので、何度書き出して取り込んでも二重にはなりません</li>
+            <li><strong>Google API で接続したときだけ</strong>使えます（.ics ファイルでは予定IDが取れないため）</li>
+          </ul>
         </div>
       </details>
 
@@ -1699,6 +1718,8 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
           <h4>📈 振り返り：段取り対象のキーワード</h4>
           <p>振り返りで「段取り対象」とみなすタイトルのキーワードです（区切りは「、」「,」または改行）。「初期値に戻す」で元に戻せます。</p>
 
+          <h4>🔗 段取り管理アプリ連携 <span class="test-badge">テスト運用中</span></h4>
+          <p>ONにすると、出力画面に「📤 段取り管理アプリ用に書き出し」ボタンが出ます（4章参照）。このブラウザだけの設定で、設定ファイルの保存・復元には含まれません。</p>
           <h4>🔑 Google API の設定（クライアントID）</h4>
           <p>Google API で取り込むためのクライアントIDを登録します（「2. アプリの開き方と事前準備」参照）。</p>
 
@@ -2758,6 +2779,54 @@ function rvToCsv(headers, rows) {
   return [headers, ...rows].map(r => r.map(q).join(',')).join('\r\n');
 }
 
+// ── 段取り管理アプリへの書き出し（連携・テスト運用中） ──
+// 受け渡し形式は両アプリの約束（取り込み側の正本は段取り管理アプリの parseGcalImport）。
+//   { _app, _type:'dandori-import', _version, _exported, range:{from,to},
+//     events:[{ gcal_id, date, time_start, time_end, title, location, dept, person, phone, strong }] }
+const rvP2 = n => String(n).padStart(2, '0');
+function rvYmd(d) { return `${d.getFullYear()}-${rvP2(d.getMonth() + 1)}-${rvP2(d.getDate())}`; }
+function rvHm(d) { return `${rvP2(d.getHours())}:${rvP2(d.getMinutes())}`; }
+// タイムゾーン付きの日時（例 2026-09-26T10:00:00+09:00）。取り込み側が「古いファイル」の注意に使う
+function rvIsoLocal(d) {
+  const off = -d.getTimezoneOffset(), sign = off >= 0 ? '+' : '-', a = Math.abs(off);
+  return `${rvYmd(d)}T${rvHm(d)}:${rvP2(d.getSeconds())}${sign}${rvP2(Math.floor(a / 60))}:${rvP2(a % 60)}`;
+}
+// 書き出す期間：今日の0時から、6か月後の同じ日まで（その日を含む）。end は翌日0時（この時刻より前が対象）
+function rvDandoriExportRange(now, months = 6) {
+  const from = new Date(now); from.setHours(0, 0, 0, 0);
+  const to = new Date(from); to.setMonth(to.getMonth() + months);
+  const end = new Date(to); end.setDate(end.getDate() + 1);
+  return { from, to, end };
+}
+// 予定の一覧 → 受け渡し用のデータ。期間内に始まる段取り対象だけを、開始順に並べる
+//   タイトルは加工しない（先頭の「●」＝あいさつ文必要の印を残す）。場所は HTML の記号だけ除く
+function rvBuildDandoriExport(events, keywords, range, version, now) {
+  const startOf = ev => new Date(ev.start?.dateTime || (ev.start?.date ? ev.start.date + 'T00:00:00' : NaN));
+  const list = (events || [])
+    .filter(ev => { const s = startOf(ev); return !isNaN(s) && s >= range.from && s < range.end && rvDandori(ev, keywords).hit; })
+    .sort((a, b) => startOf(a) - startOf(b))
+    .map(ev => {
+      const timed = !!ev.start?.dateTime;
+      const s = startOf(ev), e = timed && ev.end?.dateTime ? new Date(ev.end.dateTime) : null;
+      const c = rvParseContact(rvPlainText(ev.description)) || {};
+      return {
+        gcal_id: String(ev.id || ''),
+        date: timed ? rvYmd(s) : ev.start.date,          // 終日予定は start.date をそのまま
+        time_start: timed ? rvHm(s) : '',
+        time_end: e ? rvHm(e) : '',
+        title: String(ev.summary || ''),
+        location: rvPlainText(ev.location).replace(/\s*\n\s*/g, ' ').trim(),
+        dept: c.ka || '', person: c.staff || '', phone: c.ext || '',
+        strong: rvDandori(ev, keywords).strong,
+      };
+    });
+  return {
+    _app: 'gcal-excel', _type: 'dandori-import', _version: version, _exported: rvIsoLocal(now),
+    range: { from: rvYmd(range.from), to: rvYmd(range.to) },
+    events: list,
+  };
+}
+
 // 複数カレンダーを結合すると同じ予定が二重に入るため、タイトル＋開始日時で1件にまとめる
 function rvDedup(events) {
   const seen = new Set();
@@ -2884,6 +2953,13 @@ for (const b of Object.values(EV_XF)) {
 
 
 const CHANGELOG = [
+  {
+    version: '1.17.0', date: '2026-09-26',
+    changes: [
+      // quiet：お知らせバーには出さない（スイッチをONにした人だけが使う機能なので、ほかの利用者の画面を変えないため）。更新履歴の一覧には載る
+      { type: 'feature', quiet: true, text: '【テスト運用中】段取り管理アプリ連携：⚙設定でONにした人だけ、出力画面に「📤 段取り管理アプリ用に書き出し」が出ます。今日から6か月先までの段取り対象を、段取り管理アプリで取り込めるファイル（JSON）に書き出します（Google API で接続したときのみ）' },
+    ],
+  },
   {
     version: '1.16.4', date: '2026-09-23',
     changes: [
@@ -3235,9 +3311,11 @@ function renderUpdateBar() {
   // 前回見た版より新しい版の変更点を集める（前回の版が履歴に無いほど古い場合は最新3版まで）
   const idx = CHANGELOG.findIndex(r => r.version === seen);
   const newer = CHANGELOG.slice(0, idx >= 0 ? idx : 3);
+  // quiet の項目（一部の人だけが使う機能など）はお知らせバーに出さない。知らせることが無ければ、黙って既読にする
+  if (!newer.some(r => r.changes.some(c => !c.quiet))) { markVersionSeen(); return; }
   // 表示順：重要な変更（pin）→ 通常の新機能 → その他 → テスト運用中の機能（複数版をまとめて更新したとき、大事なものが埋もれないように）
   const rank = c => c.pin ? 0 : c.text.startsWith('【テスト運用中】') ? 3 : c.type === 'feature' ? 1 : 2;
-  const changes = newer.flatMap(r => r.changes).map((c, i) => ({ c, i })).sort((a, b) => rank(a.c) - rank(b.c) || a.i - b.i).map(x => x.c);
+  const changes = newer.flatMap(r => r.changes).filter(c => !c.quiet).map((c, i) => ({ c, i })).sort((a, b) => rank(a.c) - rank(b.c) || a.i - b.i).map(x => x.c);
   const SHOW = 4;
   const icon = t => t === 'feature' ? '✨' : t === 'fix' ? '🐛' : '•';
   const bar = document.createElement('div');
@@ -6121,6 +6199,47 @@ function resetDandoriKeywords() {
   renderDandoriKeywords();
 }
 
+// ── 段取り管理アプリ連携（テスト運用中）─────────────────
+// 職場の共用ツールなので、⚙設定でONにした人（この端末）にだけ書き出しボタンを出す。既定OFF。
+// スイッチは端末ごとの設定（設定ファイルの書き出し／読み込みには含めない＝同僚に渡しても相手はOFFのまま）
+const DANDORI_LINK_KEY = 'gcal_dandori_link';
+function isDandoriLinkOn() {
+  try { return localStorage.getItem(DANDORI_LINK_KEY) === '1'; } catch (e) { return false; }
+}
+function setDandoriLink(on) {
+  try { if (on) localStorage.setItem(DANDORI_LINK_KEY, '1'); else localStorage.removeItem(DANDORI_LINK_KEY); } catch (e) {}
+  renderDandoriLinkUI();
+}
+function renderDandoriLinkUI() {
+  const on = isDandoriLinkOn();
+  const btn = document.getElementById('dandoriExportBtn');
+  if (btn) btn.hidden = !on;
+  const chk = document.getElementById('dandoriLinkChk');
+  if (chk) chk.checked = on;
+}
+// 今日から6か月先までの段取り対象を、段取り管理アプリの取り込み用ファイル（JSON）に書き出す
+async function exportDandoriImport() {
+  // 取り込み側は Google の予定ID で「取り込み済み」を見分けるため、IDが毎回同じになる API モードだけで使う
+  // （.ics の読み込みでは予定IDを持たず、繰り返し予定も展開されない）
+  if (inputMode !== 'api') { setLog('log3', '段取り管理アプリ用の書き出しは、① 接続で「Google API」を使ったときだけ使えます', 'err'); return; }
+  if (!accessToken) { setLog('log3', '先に ① 接続で「🔑 Googleで認証する」を行ってください', 'err'); return; }
+  const now = new Date();
+  const range = rvDandoriExportRange(now, 6);
+  setLog('log3', '段取り対象を取得しています…', '');
+  let events;
+  try { events = await rvLoadEvents(range.from, range.end); }
+  catch (e) {
+    setLog('log3', e.authExpired ? 'ログインの有効期限が切れました。① 接続で再認証してから、もう一度押してください' : 'エラー：' + e.message, 'err');
+    return;
+  }
+  const data = rvBuildDandoriExport(events, getDandoriKeywords(), range, 'v' + currentVersion(), now);
+  const name = `段取り取込用_${todayYmd()}.json`;
+  // ファイルはダウンロード先に保存されるだけで、どこにも送信しない
+  downloadBlob(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), name);
+  const strong = data.events.filter(x => x.strong).length;
+  setLog('log3', `✓ ${name} を書き出しました（${data.range.from}〜${data.range.to} の段取り対象 ${data.events.length}件${strong ? `・うち担当者表記あり ${strong}件` : ''}）。段取り管理アプリの「📥 カレンダーアプリから取り込み」で読み込んでください`, 'ok');
+}
+
 // 対象月の選択（初期値は前月＝予定が確定している最新の月）
 // ── 振り返り：期間の指定 ─────────────────────────────
 // 対象の月（◀▶）と期間（月／四半期／年度／前年度）の2つで決める。期間は全タブで共通。
@@ -6586,6 +6705,7 @@ renderStorageNotice();
 renderOtOkKwSection();
 renderThemeUI();
 renderDandoriKeywords();
+renderDandoriLinkUI();
 updateApiSetupHint();
 ['calSelect', 'calSelect2', 'calSelect3'].forEach(id => document.getElementById(id)?.addEventListener('change', updateCalSummary));
 updateCalSummary();
@@ -6685,6 +6805,8 @@ window.rvCsvCompare  = rvCsvCompare;
 window.rvShiftMonth  = rvShiftMonth;
 window.saveDandoriKeywords  = saveDandoriKeywords;
 window.resetDandoriKeywords = resetDandoriKeywords;
+window.setDandoriLink = setDandoriLink;
+window.exportDandoriImport = exportDandoriImport;
 window.toggleTheme   = toggleTheme;
 window.showView      = showView;
 window.toggleView    = toggleView;
