@@ -803,6 +803,10 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 .rv-bar.prev { background: var(--text-muted); opacity: 0.45; }
 .rv-trend-v { font-family: 'Space Mono', monospace; font-size: 0.78rem; text-align: right; }
 .kw-textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: inherit; font-size: 0.88rem; padding: 8px 10px; resize: vertical; }
+/* 段取り対象の判定：3つの欄（見出し・説明・欄・初期値に戻す） */
+.kw-field-label { font-size: 0.86rem; color: var(--text); font-weight: 600; margin: 0 0 2px; }
+.kw-field-hint { margin: 0 0 6px; }
+.kw-field-foot { display: flex; gap: 8px; align-items: center; margin: 6px 0 16px; }
 @media (max-width: 600px) { .rv-trend-row { grid-template-columns: 34px 1fr 70px; } .rv-trend-d { display: none; } }
 
 /* 振り返り B：タブ・一覧 */
@@ -978,7 +982,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   <div class="header-row">
     <h1>Googleカレンダー → Excel 変換<span class="header-suffix">（Webアプリ）</span></h1>
     <div class="header-actions">
-      <div class="header-version" onclick="showChangelog()" title="クリックで更新履歴を表示">v1.17.0&nbsp;&nbsp;•&nbsp;&nbsp;2026-09-26</div>
+      <div class="header-version" onclick="showChangelog()" title="クリックで更新履歴を表示">v1.18.0&nbsp;&nbsp;•&nbsp;&nbsp;2026-10-21</div>
       <button type="button" class="hdr-btn" id="themeBtn" onclick="toggleTheme()" title="ダーク／ライトを切り替え">🌙</button>
       <button type="button" class="hdr-btn" id="navReviewBtn" onclick="toggleView('review')" title="月別の振り返り（テスト運用中）">📈 振り返り<span class="test-badge">テスト</span></button>
       <button type="button" class="hdr-btn" id="navSettingsBtn" onclick="toggleView('settings')" title="一度決めたらあまり変えない設定">⚙ 設定</button>
@@ -1208,7 +1212,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     <button class="btn btn-secondary" id="previewBtn" onclick="previewExcel()">👁 プレビュー</button>
     <button class="btn btn-secondary" id="gyomuhouBtn" onclick="copyGyomuhouEntries()" title="業務報告イベントの時間枠を日付ごとに一覧でコピー">📋 業務報告枠リスト</button>
     <!-- 段取り管理アプリ連携（テスト運用中）：⚙設定でONにした人にだけ表示 -->
-    <button class="btn btn-secondary" id="dandoriExportBtn" onclick="exportDandoriImport()" hidden title="今日から6か月先までの段取り対象を、段取り管理アプリで取り込めるファイル（JSON）に書き出します">📤 段取り管理アプリ用に書き出し</button>
+    <button class="btn btn-secondary" id="dandoriExportBtn" onclick="exportDandoriImport()" hidden title="今日から6か月先までの段取り対象を、段取り管理アプリで取り込めるファイル（JSON）に保存します">📤 段取り管理アプリ用ファイルを保存</button>
   </div>
   <div class="log" id="log3"></div>
 </div>
@@ -1335,15 +1339,35 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   </details>
 
   <details class="config-section" id="secReview">
-    <summary>📈 振り返り：段取り対象のキーワード <span class="test-badge">テスト</span></summary>
+    <summary>📈 段取り対象の判定 <span class="test-badge">テスト</span></summary>
     <div class="config-section-body">
-      <p class="hint" style="margin-top:0;margin-bottom:8px">タイトルにこれらの語を含む予定を「段取り対象」として数えます（区切りは「、」「,」または改行）。<br>
-      「業務報告」「移動」「予定あり」「ブロック」を含む予定は対象外です。説明欄に「〇〇課　〇〇係長（1111）」のような担当者表記もある予定は ★（確度高）として表示します。</p>
-      <textarea id="dandoriKw" rows="3" oninput="saveDandoriKeywords()" class="kw-textarea"></textarea>
-      <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
-        <button type="button" class="btn btn-secondary btn-sm" onclick="resetDandoriKeywords()">初期値に戻す</button>
+      <p class="hint" style="margin-top:0;margin-bottom:12px">振り返りの「段取り対象」と、段取り管理アプリ用ファイルに入れる予定を、次の3つの欄で決めます。語の区切りは「、」「,」または改行です。<br>
+      説明欄に「〇〇課　〇〇係長（1111）」のような担当者表記もある予定は ★（確度高）として表示します。</p>
+
+      <label for="dandoriKw" class="kw-field-label">対象にするキーワード</label>
+      <p class="hint kw-field-hint">タイトルにこれらの語を含む予定を、段取り対象にします。</p>
+      <textarea id="dandoriKw" rows="3" oninput="saveDandoriList('keywords')" class="kw-textarea"></textarea>
+      <div class="kw-field-foot">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="resetDandoriList('keywords')">初期値に戻す</button>
         <span id="dandoriKwCount" class="hint" style="margin:0"></span>
       </div>
+
+      <label for="dandoriExKw" class="kw-field-label">対象にしない語</label>
+      <p class="hint kw-field-hint">これらの語を含む予定は、上のキーワードを含んでいても対象外にします。「業務報告」は、この欄から消しても対象外のままです（説明欄の書き方が担当者表記と同じため）。</p>
+      <textarea id="dandoriExKw" rows="2" oninput="saveDandoriList('exclude')" class="kw-textarea"></textarea>
+      <div class="kw-field-foot">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="resetDandoriList('exclude')">初期値に戻す</button>
+        <span id="dandoriExKwCount" class="hint" style="margin:0"></span>
+      </div>
+
+      <label for="dandoriDescKw" class="kw-field-label">説明欄に記入があるときだけ対象にする語</label>
+      <p class="hint kw-field-hint">これらの語を含む予定は、説明欄に何か書いてあるときだけ段取り対象にします。空白や改行だけなら対象外です。</p>
+      <textarea id="dandoriDescKw" rows="2" oninput="saveDandoriList('descOnly')" class="kw-textarea"></textarea>
+      <div class="kw-field-foot">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="resetDandoriList('descOnly')">初期値に戻す</button>
+        <span id="dandoriDescKwCount" class="hint" style="margin:0"></span>
+      </div>
+      <p class="hint" style="margin:10px 0 0">あとから初期値に足された語は、自分で変更した欄にも自動で足されます（自分で消した語は戻りません）。</p>
     </div>
   </details>
 
@@ -1352,9 +1376,9 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     <div class="config-section-body">
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.9rem">
         <input type="checkbox" id="dandoriLinkChk" onchange="setDandoriLink(this.checked)" style="width:auto;margin:0">
-        出力画面に「📤 段取り管理アプリ用に書き出し」ボタンを出す
+        出力画面に「📤 段取り管理アプリ用ファイルを保存」ボタンを出す
       </label>
-      <p class="hint" style="margin-top:8px;margin-bottom:0">段取り管理アプリを使っている人向けです。押すと、今日から6か月先までの「段取り対象」（上の 📈 振り返り のキーワードで判定）を、段取り管理アプリの「📥 カレンダーアプリから取り込み」で読み込めるファイル（JSON）に書き出します。<br>Google API で接続したときだけ使えます。ファイルには担当者名・内線が入りますが、ダウンロード先に保存されるだけで、どこにも送信しません。<br>この設定はこのブラウザだけのもので、設定ファイルの保存・復元には含まれません。</p>
+      <p class="hint" style="margin-top:8px;margin-bottom:0">段取り管理アプリを使っている人向けです。押すと、今日から6か月先までの「段取り対象」（上の 📈 段取り対象の判定 で決めた予定）を、段取り管理アプリの「📥 カレンダーアプリから取り込み」で読み込めるファイル（JSON）に保存します。<br>Google API で接続したときだけ使えます。ファイルには担当者名・内線が入りますが、ダウンロード先に保存されるだけで、どこにも送信しません。<br>この設定はこのブラウザだけのもので、設定ファイルの保存・復元には含まれません。</p>
     </div>
   </details>
   <details class="config-section" id="secApi">
@@ -1656,13 +1680,19 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
             <li>CSV では、「=」「+」「-」「@」で始まる文字の先頭に「'」を付けています（Excel が数式として扱わないように）</li>
           </ul>
           <h4>段取り対象とは</h4>
-          <p>タイトルに「大会・式典・総会・懇親会・会議・表彰・祝賀・開会・記念・レセプション・取締役会」などのキーワードを含む予定です（<strong>⚙設定 ＞ 📈 振り返り</strong> で変更できます）。「業務報告」「移動」「予定あり」「ブロック」を含む予定は対象外です。説明欄に「〇〇課　〇〇係長（1111）」のような担当者表記もある予定は ★（確度高）として表示します。</p>
-          <p class="note">※ 月別サマリーの件数は時刻指定のある予定だけを数えます（終日予定は除く）。複数カレンダーで重複する予定は1件にまとめます。</p>
-          <h4>📤 段取り管理アプリへの書き出し（連携）<span class="test-badge">テスト運用中</span></h4>
+          <p>式典や総会など、準備（段取り）が要る予定です。タイトルの語で次のように決めます（3つとも <strong>⚙設定 ＞ 📈 段取り対象の判定</strong> で変更できます）。</p>
           <ul>
-            <li><strong>⚙設定 ＞ 🔗 段取り管理アプリ連携</strong> をONにした人にだけ、出力画面の ④ に「📤 段取り管理アプリ用に書き出し」ボタンが出ます（既定はOFF。OFFの人の画面は変わりません）</li>
-            <li>押すと、<strong>今日から6か月先まで</strong>の段取り対象を <code>段取り取込用_YYYYMMDD.json</code> に書き出します。タイトル（先頭の「●」も含めそのまま）・日時・場所・担当課・担当者・内線と、Googleの予定IDが入ります</li>
-            <li>段取り管理アプリの「📤 データ ▾」→「📥 カレンダーアプリから取り込み」で読み込むと、🆕新規／似た予定あり／取り込み済み に分けて確認してから登録できます。同じ予定は予定IDで見分けるので、何度書き出して取り込んでも二重にはなりません</li>
+            <li><strong>対象にするキーワード</strong>：タイトルに「大会・式典・総会・懇親会・会議・表彰・祝賀・開会・記念・レセプション・取締役会・理事会・表敬」などを含む予定は対象です</li>
+            <li><strong>説明欄に記入があるときだけ対象にする語</strong>：「来訪」「面談」を含む予定は、説明欄に何か書いてあるときだけ対象です（段取りが要る予定には、担当者名や補足がほぼ必ず書かれるため）</li>
+            <li><strong>対象にしない語</strong>：「業務報告」「移動」「予定あり」「ブロック」「本会議」「議会開会」を含む予定は、上の語を含んでいても対象外です。「業務報告」は欄から消しても対象外のままです</li>
+          </ul>
+          <p>説明欄に「〇〇課　〇〇係長（1111）」のような担当者表記もある予定は ★（確度高）として表示します。あとから初期値に足された語は、自分で変更した欄にも自動で足されます（自分で消した語は戻りません）。</p>
+          <p class="note">※ 月別サマリーの件数は時刻指定のある予定だけを数えます（終日予定は除く）。複数カレンダーで重複する予定は1件にまとめます。</p>
+          <h4>📤 段取り管理アプリ用ファイルの保存（連携）<span class="test-badge">テスト運用中</span></h4>
+          <ul>
+            <li><strong>⚙設定 ＞ 🔗 段取り管理アプリ連携</strong> をONにした人にだけ、出力画面の ④ に「📤 段取り管理アプリ用ファイルを保存」ボタンが出ます（既定はOFF。OFFの人の画面は変わりません）</li>
+            <li>押すと、<strong>今日から6か月先まで</strong>の段取り対象を <code>段取り取込用_YYYYMMDD.json</code> に保存します。押すたびにカレンダーから取り直します。タイトル（先頭の「●」も含めそのまま）・日時・場所・担当課・担当者・内線と、Googleの予定IDが入ります</li>
+            <li>段取り管理アプリの「📤 データ ▾」→「📥 カレンダーアプリから取り込み」で読み込むと、🆕新規／似た予定あり／取り込み済み に分けて確認してから登録できます。同じ予定は予定IDで見分けるので、何度保存して取り込んでも二重にはなりません</li>
             <li><strong>Google API で接続したときだけ</strong>使えます（.ics ファイルでは予定IDが取れないため）</li>
           </ul>
         </div>
@@ -1715,11 +1745,11 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
           <h4>🌙 時間外OK扱いキーワード</h4>
           <p>17時以降に始まる予定は処理ログに「📋 要確認」として出ます。ここに登録したキーワード（懇親会・総会など）を含む予定は、この警告を出しません。</p>
 
-          <h4>📈 振り返り：段取り対象のキーワード</h4>
-          <p>振り返りで「段取り対象」とみなすタイトルのキーワードです（区切りは「、」「,」または改行）。「初期値に戻す」で元に戻せます。</p>
+          <h4>📈 段取り対象の判定</h4>
+          <p>振り返りの「段取り対象」と、段取り管理アプリ用ファイルに入れる予定を決める3つの欄です（4章「段取り対象とは」参照）。「対象にするキーワード」「対象にしない語」「説明欄に記入があるときだけ対象にする語」を、それぞれ「、」「,」または改行で区切って入力します。欄ごとの「初期値に戻す」で元に戻せます。</p>
 
           <h4>🔗 段取り管理アプリ連携 <span class="test-badge">テスト運用中</span></h4>
-          <p>ONにすると、出力画面に「📤 段取り管理アプリ用に書き出し」ボタンが出ます（4章参照）。このブラウザだけの設定で、設定ファイルの保存・復元には含まれません。</p>
+          <p>ONにすると、出力画面に「📤 段取り管理アプリ用ファイルを保存」ボタンが出ます（4章参照）。このブラウザだけの設定で、設定ファイルの保存・復元には含まれません。</p>
           <h4>🔑 Google API の設定（クライアントID）</h4>
           <p>Google API で取り込むためのクライアントIDを登録します（「2. アプリの開き方と事前準備」参照）。</p>
 
@@ -1778,7 +1808,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
             <li>時間外OK扱いキーワード</li>
             <li>担当運転手（A・B の名前と曜日の割当）</li>
             <li>メインカレンダーのプリセット</li>
-            <li>振り返りの段取り対象キーワード</li>
+            <li>段取り対象の判定（3つの欄）</li>
           </ul>
           <p class="hint" style="margin-top:6px">※ 含まれないもの：クライアントID、2つ目・3つ目のカレンダーとファイル名のプリセット、表示モード、ICS URL、前回の出力の記録（端末ごとの設定のため）。</p>
 
@@ -1981,7 +2011,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
             <li>非公開にしたい予定 → 「タイトル変換ルール」に登録すれば自動で「予定あり」などに置き換わります</li>
             <li>「○○様訪問」→ 既定の「訪問 → 訪問あり（人名がある予定だけ）」で「訪問あり」になります。迷ったら「🧪 変換テスト」で確認</li>
             <li>17時以降の懇親会など → 「時間外OK扱いキーワード」に登録すると「📋 要確認」が出なくなります</li>
-            <li>段取りが必要な行事の説明欄には、担当課・担当者・内線を書いておくと、振り返りで担当者まで一覧できます</li>
+            <li>段取りが必要な行事の説明欄には、担当課・担当者・内線を書いておくと、振り返りで担当者まで一覧できます。「来訪」「面談」の予定は、説明欄に何か書いてあるときだけ段取り対象になります</li>
           </ul>
         </div>
       </details>
@@ -2602,10 +2632,18 @@ function countGyomuItems(ev) {
   return rvParseReportItems(ev.description).filter(x => !x.titleOnly).length || (rvPlainText(ev.description).trim() ? 0 : 1);
 }
 
-// 「段取り対象」＝式典・総会などの準備が要る予定。判定はタイトルのキーワードだけで行う。
-const RV_DANDORI_DEFAULT = ['大会', '式典', '総会', '懇親会', '会議', '表彰', '祝賀', '開会', '記念', 'レセプション', '取締役会'];
-// キーワードを含んでも対象にしない予定（業務報告は説明欄の書き方が担当者表記と同じなので必ず外す）
-const RV_DANDORI_EXCLUDE = ['業務報告', '移動', '予定あり', 'ブロック'];
+// 「段取り対象」＝式典・総会などの準備が要る予定。判定はタイトルの語で行う（来訪・面談だけは説明欄の記入も見る）。
+// 3つの語の一覧は⚙設定で編集できる。初期値に語を足すときは末尾に足す
+//   （各ブラウザは「届けた初期値」を記録していて、まだ届けていない語だけを、編集済みの一覧にも1回足す＝rvMergeDefaults）
+const RV_DANDORI_DEFAULT = ['大会', '式典', '総会', '懇親会', '会議', '表彰', '祝賀', '開会', '記念', 'レセプション', '取締役会', '理事会', '表敬'];
+// v1.13.0 の初期値。「届けた記録」を持たない古い保存（v1.17.0 まで）と古い設定ファイルは、ここまでを届けた扱いにする
+const RV_DANDORI_BASE = ['大会', '式典', '総会', '懇親会', '会議', '表彰', '祝賀', '開会', '記念', 'レセプション'];
+// キーワードを含んでも対象にしない語（「議会開会」は「開会」、「本会議」は「会議」に一致してしまうため）
+const RV_DANDORI_EXCLUDE_DEFAULT = ['業務報告', '移動', '予定あり', 'ブロック', '本会議', '議会開会'];
+// 欄から消しても必ず外す語（業務報告は説明欄の書き方が担当者表記と同じなので、★の判定が狂う）
+const RV_DANDORI_ALWAYS_EXCLUDE = ['業務報告'];
+// 説明欄に何か書いてあるときだけ対象にする語（段取りが要る予定には、ほぼ必ず担当者名や補足が書かれるため）
+const RV_DANDORI_DESC_DEFAULT = ['来訪', '面談'];
 
 // 全角数字（１２３４）を半角にそろえる。内線を全角で書いても読み取れるように
 function rvHalfDigits(s) {
@@ -2616,12 +2654,34 @@ function rvHasContact(desc) {
   const d = rvHalfDigits(desc);
   return /(課|室|センター|事務所)/.test(d) && /[（(]\s*\d{3,5}\s*[)）]/.test(d);
 }
-// 段取り対象の判定。hit=対象か、strong=担当者表記もあり確からしい、kw=一致したキーワード
-function rvDandori(ev, keywords) {
+// 説明欄に何か書いてあるか（HTMLの記号・空白・改行だけなら「空」とみなす）
+function rvHasDesc(desc) {
+  return rvPlainText(desc).replace(/[\s　 ]/g, '').length > 0;
+}
+// 段取り対象の判定。hit=対象か、strong=担当者表記もあり確からしい、kw=一致した語
+//   rules = { keywords: 対象にするキーワード, exclude: 対象にしない語, descOnly: 説明欄に記入があるときだけ対象にする語 }
+//   順番：対象にしない語（業務報告は常に）→ キーワード → 説明欄に記入があるときだけの語
+function rvDandori(ev, rules) {
+  const r = Array.isArray(rules) ? { keywords: rules } : (rules || {});   // 古い呼び方（キーワードの配列だけ）も受け付ける
   const t = String(ev.summary || '');
-  if (RV_DANDORI_EXCLUDE.some(x => t.includes(x))) return { hit: false, strong: false, kw: null };
-  const kw = (keywords || []).find(k => k && t.includes(k)) || null;
+  const exclude = [...RV_DANDORI_ALWAYS_EXCLUDE, ...(r.exclude ?? RV_DANDORI_EXCLUDE_DEFAULT)];
+  if (exclude.some(x => x && t.includes(x))) return { hit: false, strong: false, kw: null };
+  let kw = (r.keywords || []).find(k => k && t.includes(k)) || null;
+  if (!kw && rvHasDesc(ev.description)) kw = (r.descOnly ?? RV_DANDORI_DESC_DEFAULT).find(k => k && t.includes(k)) || null;
   return { hit: !!kw, strong: !!kw && rvHasContact(ev.description), kw };
+}
+// 初期値の追加を、一覧を編集済みのブラウザにも届ける。
+//   list＝保存済みの一覧、seen＝これまでに届けた初期値（記録が無い古い保存は base を届けた扱い）
+//   まだ届けていない初期値だけを一覧の末尾に足す。届けたあとに利用者が消した語は戻さない。
+//   戻り値：{ list: 足したあとの一覧, seen: 届けた初期値（今の初期値をすべて含む）, added: 今回足した語 }
+function rvMergeDefaults(list, seen, defaults, base = []) {
+  const known = new Set(Array.isArray(seen) ? seen : base);
+  const out = [...(list || [])], added = [];
+  for (const d of defaults) {
+    if (known.has(d) || out.includes(d)) continue;
+    out.push(d); added.push(d);
+  }
+  return { list: out, seen: [...new Set([...known, ...defaults])], added };
 }
 
 // ── 説明欄の読み取り（B：振り返り一覧用） ──
@@ -2800,10 +2860,11 @@ function rvDandoriExportRange(now, months = 6) {
 }
 // 予定の一覧 → 受け渡し用のデータ。期間内に始まる段取り対象だけを、開始順に並べる
 //   タイトルは加工しない（先頭の「●」＝あいさつ文必要の印を残す）。場所は HTML の記号だけ除く
-function rvBuildDandoriExport(events, keywords, range, version, now) {
+//   rules は rvDandori と同じ（3つの語の一覧）
+function rvBuildDandoriExport(events, rules, range, version, now) {
   const startOf = ev => new Date(ev.start?.dateTime || (ev.start?.date ? ev.start.date + 'T00:00:00' : NaN));
   const list = (events || [])
-    .filter(ev => { const s = startOf(ev); return !isNaN(s) && s >= range.from && s < range.end && rvDandori(ev, keywords).hit; })
+    .filter(ev => { const s = startOf(ev); return !isNaN(s) && s >= range.from && s < range.end && rvDandori(ev, rules).hit; })
     .sort((a, b) => startOf(a) - startOf(b))
     .map(ev => {
       const timed = !!ev.start?.dateTime;
@@ -2817,7 +2878,7 @@ function rvBuildDandoriExport(events, keywords, range, version, now) {
         title: String(ev.summary || ''),
         location: rvPlainText(ev.location).replace(/\s*\n\s*/g, ' ').trim(),
         dept: c.ka || '', person: c.staff || '', phone: c.ext || '',
-        strong: rvDandori(ev, keywords).strong,
+        strong: rvDandori(ev, rules).strong,
       };
     });
   return {
@@ -2851,7 +2912,7 @@ function rvQuarterRange(fy, q) {
 function rvMonthRange(y, m) { return { start: new Date(y, m - 1, 1), end: new Date(y, m, 1) }; }
 
 // 期間 [start, end) の指標。時刻指定の予定のみ数える（終日予定は運転手指定などに使われるため）
-function rvMetrics(events, start, end, keywords) {
+function rvMetrics(events, start, end, rules) {
   let total = 0, gyomu = 0, dandori = 0, strong = 0;
   for (const ev of events || []) {
     if (!ev.start?.dateTime) continue;
@@ -2859,7 +2920,7 @@ function rvMetrics(events, start, end, keywords) {
     if (s < start || s >= end) continue;
     total++;
     gyomu += countGyomuItems(ev);
-    const d = rvDandori(ev, keywords);
+    const d = rvDandori(ev, rules);
     if (d.hit) { dandori++; if (d.strong) strong++; }
   }
   return { total, gyomu, dandori, strong };
@@ -2953,6 +3014,15 @@ for (const b of Object.values(EV_XF)) {
 
 
 const CHANGELOG = [
+  {
+    version: '1.18.0', date: '2026-10-21',
+    changes: [
+      { type: 'feature', text: '【テスト運用中】⚙設定の「📈 段取り対象の判定」で、「対象にしない語」と「説明欄に記入があるときだけ対象にする語」も編集できるようにしました。「本会議」「議会開会」は対象外になり、「来訪」「面談」は説明欄に何か書いてある予定だけが対象になります（振り返りの件数・一覧も同じ判定です）' },
+      { type: 'change', text: '【テスト運用中】段取り対象の初期キーワードに「理事会」「表敬」を追加しました。今後、初期値に足した語は、キーワードを自分で変更したブラウザにも自動で足されます（自分で消した語は戻りません）。これまで届いていなかった「取締役会」も、このとき足されます' },
+      // quiet：連携のスイッチをONにした人だけが使う機能なので、お知らせバーには出さない
+      { type: 'change', quiet: true, text: '【テスト運用中】段取り管理アプリ連携：ボタンの名前を「📤 段取り管理アプリ用ファイルを保存」に変えました。押すたびにカレンダーから取り直すので、同じページのまま、あとからカレンダーに入れた予定も入ります' },
+    ],
+  },
   {
     version: '1.17.0', date: '2026-09-26',
     changes: [
@@ -4325,7 +4395,9 @@ function exportSettings() {
       otOkKeywords: OT_OK_KEYWORDS,
       drivers: drivers,
       presetCalId: localStorage.getItem('gcal_preset_calid') || '',
-      dandoriKeywords: getDandoriKeywords(),
+      // 段取り対象の判定（3つの語の一覧）と、届けた初期値の記録（読み込んだ先でも、あとから足した初期値が届くように）
+      ...Object.fromEntries(Object.entries(DANDORI_LISTS).map(([name, c]) => [c.file, getDandoriList(name)])),
+      dandoriSeen: Object.fromEntries(Object.keys(DANDORI_LISTS).map(name => [name, getDandoriSeen(name)])),
     },
   };
   const json = JSON.stringify(data, null, 2);
@@ -4413,11 +4485,20 @@ function importSettings(file) {
           }
         }
       }
-      // 振り返り：段取り対象のキーワード
-      if (Array.isArray(s.dandoriKeywords) && s.dandoriKeywords.length) {
-        localStorage.setItem(DANDORI_KEY, JSON.stringify(s.dandoriKeywords));
-        renderDandoriKeywords();
-      }
+      // 段取り対象の判定（3つの語の一覧）。ファイルに無い項目は今の設定のまま
+      //   届けた初期値の記録が無い古いファイル（v1.17.0 まで）は、v1.13.0 の初期値までを届けた扱いにする
+      //   → 「取締役会」など後から足した初期値が、読み込んだあとに足される
+      Object.entries(DANDORI_LISTS).forEach(([name, c]) => {
+        const arr = s[c.file];
+        if (!Array.isArray(arr)) return;
+        const list = [...new Set(arr.map(x => String(x ?? '').trim()).filter(Boolean))];
+        if (!list.length && !c.allowEmpty) return;
+        localStorage.setItem(c.key, JSON.stringify(list));
+        const seen = s.dandoriSeen?.[name];
+        if (Array.isArray(seen)) localStorage.setItem(c.seenKey, JSON.stringify(seen.map(String)));
+        else localStorage.removeItem(c.seenKey);
+      });
+      renderDandoriLists();
       // プリセットカレンダー
       if (typeof s.presetCalId === 'string' && s.presetCalId) {
         localStorage.setItem('gcal_preset_calid', s.presetCalId);
@@ -6169,38 +6250,75 @@ async function exportExcel(opts = {}) {
 // ── 📈 振り返り（テスト運用中） ──────────────────────────
 // 出力用の fetchedEvents とは別にデータを取り、表示するだけ。Excel出力には一切関わらない。
 
-// 段取り対象のキーワード（⚙設定で編集。未設定なら初期値）
-const DANDORI_KEY = 'gcal_dandori_keywords';
+// 段取り対象の判定に使う3つの語の一覧（⚙設定 ＞ 段取り対象の判定 で編集。未保存なら初期値）
+//   key＝保存した一覧、seenKey＝このブラウザに届けた初期値の記録。
+//   初期値に語を足したとき、一覧を編集済みのブラウザにも1回だけ足し、利用者が消した語は戻さないために使う（rvMergeDefaults）
+//   allowEmpty：空の一覧を保存できるか（キーワードは空にすると初期値に戻る＝以前からの動き）
+//   file：設定ファイルでの項目名
+const DANDORI_LISTS = {
+  keywords: { key: 'gcal_dandori_keywords', seenKey: 'gcal_dandori_keywords_seen', defaults: RV_DANDORI_DEFAULT,         base: RV_DANDORI_BASE, allowEmpty: false, ta: 'dandoriKw',     count: 'dandoriKwCount',     file: 'dandoriKeywords' },
+  exclude:  { key: 'gcal_dandori_exclude',  seenKey: 'gcal_dandori_exclude_seen',  defaults: RV_DANDORI_EXCLUDE_DEFAULT, base: [],              allowEmpty: true,  ta: 'dandoriExKw',   count: 'dandoriExKwCount',   file: 'dandoriExclude' },
+  descOnly: { key: 'gcal_dandori_desc',     seenKey: 'gcal_dandori_desc_seen',     defaults: RV_DANDORI_DESC_DEFAULT,    base: [],              allowEmpty: true,  ta: 'dandoriDescKw', count: 'dandoriDescKwCount', file: 'dandoriDescOnly' },
+};
 function parseKeywordText(text) {
   return [...new Set(String(text || '').split(/[、,，\n]/).map(s => s.trim()).filter(Boolean))];
 }
-function getDandoriKeywords() {
+function readJsonKey(key) {
+  try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) { return null; }
+}
+// 今の一覧。まだ届けていない初期値があれば足して保存し直す（このとき「届けた」記録も更新する）
+function getDandoriList(name) {
+  const c = DANDORI_LISTS[name];
+  const list = readJsonKey(c.key), seen = readJsonKey(c.seenKey);
+  if (!Array.isArray(list) || (!list.length && !c.allowEmpty)) return [...c.defaults];   // 未保存なら初期値そのもの
+  const m = rvMergeDefaults(list, seen, c.defaults, c.base);
+  if (m.added.length || !Array.isArray(seen) || m.seen.length !== seen.length) {
+    try { localStorage.setItem(c.key, JSON.stringify(m.list)); localStorage.setItem(c.seenKey, JSON.stringify(m.seen)); } catch (e) {}
+  }
+  return m.list;
+}
+// 届けた初期値の記録（設定ファイルに入れる）。初期値のまま使っているなら、今の初期値をすべて届けた扱い
+function getDandoriSeen(name) {
+  const c = DANDORI_LISTS[name];
+  getDandoriList(name);   // 足し忘れがあれば先に足して、記録をそろえる
+  const seen = readJsonKey(c.seenKey);
+  return Array.isArray(seen) && Array.isArray(readJsonKey(c.key)) ? seen : [...c.defaults];
+}
+function getDandoriRules() {
+  return { keywords: getDandoriList('keywords'), exclude: getDandoriList('exclude'), descOnly: getDandoriList('descOnly') };
+}
+function renderDandoriList(name) {
+  const c = DANDORI_LISTS[name];
+  const ta = document.getElementById(c.ta);
+  const list = getDandoriList(name);
+  if (ta && document.activeElement !== ta) ta.value = list.join('、');
+  const cnt = document.getElementById(c.count);
+  if (cnt) cnt.textContent = `${list.length}語`;
+}
+function renderDandoriLists() { Object.keys(DANDORI_LISTS).forEach(renderDandoriList); }
+function saveDandoriList(name) {
+  const c = DANDORI_LISTS[name];
+  const list = parseKeywordText(document.getElementById(c.ta)?.value);
   try {
-    const v = JSON.parse(localStorage.getItem(DANDORI_KEY) || 'null');
-    if (Array.isArray(v) && v.length) return v;
+    if (list.length || c.allowEmpty) {
+      localStorage.setItem(c.key, JSON.stringify(list));
+      // 欄に出ていた初期値は、すべて届けた扱い（ここで消した語は、次に開いても戻さない）
+      localStorage.setItem(c.seenKey, JSON.stringify([...new Set([...(readJsonKey(c.seenKey) || c.base), ...c.defaults])]));
+    } else {
+      localStorage.removeItem(c.key);   // キーワードを全部消したら初期値に戻す（以前からの動き）
+    }
   } catch (e) {}
-  return [...RV_DANDORI_DEFAULT];
+  renderDandoriList(name);
 }
-function renderDandoriKeywords() {
-  const ta = document.getElementById('dandoriKw');
-  const kws = getDandoriKeywords();
-  if (ta && document.activeElement !== ta) ta.value = kws.join('、');
-  const cnt = document.getElementById('dandoriKwCount');
-  if (cnt) cnt.textContent = `${kws.length}語`;
-}
-function saveDandoriKeywords() {
-  const kws = parseKeywordText(document.getElementById('dandoriKw')?.value);
-  try { if (kws.length) localStorage.setItem(DANDORI_KEY, JSON.stringify(kws)); else localStorage.removeItem(DANDORI_KEY); } catch (e) {}
-  renderDandoriKeywords();
-}
-function resetDandoriKeywords() {
-  try { localStorage.removeItem(DANDORI_KEY); } catch (e) {}
-  const ta = document.getElementById('dandoriKw'); if (ta) ta.value = RV_DANDORI_DEFAULT.join('、');
-  renderDandoriKeywords();
+function resetDandoriList(name) {
+  const c = DANDORI_LISTS[name];
+  try { localStorage.removeItem(c.key); localStorage.removeItem(c.seenKey); } catch (e) {}
+  const ta = document.getElementById(c.ta); if (ta) ta.value = c.defaults.join('、');
+  renderDandoriList(name);
 }
 
 // ── 段取り管理アプリ連携（テスト運用中）─────────────────
-// 職場の共用ツールなので、⚙設定でONにした人（この端末）にだけ書き出しボタンを出す。既定OFF。
+// 職場の共用ツールなので、⚙設定でONにした人（この端末）にだけ保存ボタンを出す。既定OFF。
 // スイッチは端末ごとの設定（設定ファイルの書き出し／読み込みには含めない＝同僚に渡しても相手はOFFのまま）
 const DANDORI_LINK_KEY = 'gcal_dandori_link';
 function isDandoriLinkOn() {
@@ -6217,27 +6335,28 @@ function renderDandoriLinkUI() {
   const chk = document.getElementById('dandoriLinkChk');
   if (chk) chk.checked = on;
 }
-// 今日から6か月先までの段取り対象を、段取り管理アプリの取り込み用ファイル（JSON）に書き出す
+// 今日から6か月先までの段取り対象を、段取り管理アプリの取り込み用ファイル（JSON）に保存する
 async function exportDandoriImport() {
   // 取り込み側は Google の予定ID で「取り込み済み」を見分けるため、IDが毎回同じになる API モードだけで使う
   // （.ics の読み込みでは予定IDを持たず、繰り返し予定も展開されない）
-  if (inputMode !== 'api') { setLog('log3', '段取り管理アプリ用の書き出しは、① 接続で「Google API」を使ったときだけ使えます', 'err'); return; }
+  if (inputMode !== 'api') { setLog('log3', '段取り管理アプリ用ファイルの保存は、① 接続で「Google API」を使ったときだけ使えます', 'err'); return; }
   if (!accessToken) { setLog('log3', '先に ① 接続で「🔑 Googleで認証する」を行ってください', 'err'); return; }
   const now = new Date();
   const range = rvDandoriExportRange(now, 6);
   setLog('log3', '段取り対象を取得しています…', '');
   let events;
-  try { events = await rvLoadEvents(range.from, range.end); }
+  // 毎回カレンダーから取り直す（同じページで2回押したとき、あとからカレンダーに入れた予定が漏れないように）
+  try { events = await rvLoadEvents(range.from, range.end, { fresh: true }); }
   catch (e) {
     setLog('log3', e.authExpired ? 'ログインの有効期限が切れました。① 接続で再認証してから、もう一度押してください' : 'エラー：' + e.message, 'err');
     return;
   }
-  const data = rvBuildDandoriExport(events, getDandoriKeywords(), range, 'v' + currentVersion(), now);
+  const data = rvBuildDandoriExport(events, getDandoriRules(), range, 'v' + currentVersion(), now);
   const name = `段取り取込用_${todayYmd()}.json`;
   // ファイルはダウンロード先に保存されるだけで、どこにも送信しない
   downloadBlob(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), name);
   const strong = data.events.filter(x => x.strong).length;
-  setLog('log3', `✓ ${name} を書き出しました（${data.range.from}〜${data.range.to} の段取り対象 ${data.events.length}件${strong ? `・うち担当者表記あり ${strong}件` : ''}）。段取り管理アプリの「📥 カレンダーアプリから取り込み」で読み込んでください`, 'ok');
+  setLog('log3', `✓ ${name} を保存しました（${data.range.from}〜${data.range.to} の段取り対象 ${data.events.length}件${strong ? `・うち担当者表記あり ${strong}件` : ''}）。段取り管理アプリの「📥 カレンダーアプリから取り込み」で読み込んでください`, 'ok');
 }
 
 // 対象月の選択（初期値は前月＝予定が確定している最新の月）
@@ -6314,12 +6433,13 @@ function rvPeriod() {
 
 // ── 振り返り：データの取得 ───────────────────────────
 let rvCache = null;   // { key, events }（同じ範囲・同じカレンダーなら取り直さない）
-async function rvLoadEvents(start, end) {
+// opts.fresh：使い回さずに取り直す（段取り管理アプリ用ファイルの保存で使う）
+async function rvLoadEvents(start, end, opts = {}) {
   if (inputMode === 'api') {
     if (!accessToken) throw new Error('出力画面の ① 接続で、先に「🔑 Googleで認証する」を行ってください');
     const ids = ['calSelect', 'calSelect2', 'calSelect3'].map(id => document.getElementById(id)?.value || '').filter(Boolean);
     const key = `api|${ids.join(',')}|${start.toISOString()}|${end.toISOString()}`;
-    if (rvCache?.key === key) return rvCache.events;
+    if (!opts.fresh && rvCache?.key === key) return rvCache.events;
     const url = id => `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(id)}/events?timeMin=${start.toISOString()}&timeMax=${end.toISOString()}&singleEvents=true&orderBy=startTime&maxResults=2500`;
     const lists = await Promise.all(ids.map(id => gapiAll(url(id))));
     const events = rvDedup(lists.flat().filter(e => e.start && (e.start.dateTime || e.start.date)));
@@ -6407,7 +6527,7 @@ let rvTrendKey = 'total';
 let rvOverviewSeq = 0;   // 概要を描き直すたびに増やす番号（古い照合結果で上書きしないため）
 function rvSetTrend(k) { rvTrendKey = k; renderReview(); }
 function rvRenderOverview(out, p) {
-  const kws = getDandoriKeywords();
+  const kws = getDandoriRules();
   const ev = rvState.events;
   const M = r => rvMetrics(ev, r.start, r.end, kws);
   const cur = M(p), ly = M(p.ly), prev = p.prev ? M(p.prev) : null;
@@ -6471,7 +6591,7 @@ function rvRenderOverview(out, p) {
     + `<tr class="rv-tsub"><td colspan="4">${fy}年度 / ${fy - 1}年度（四半期ごと）</td></tr>` + qRows
     + `<tr class="rv-tsum"><td>年度累計（4〜${rvState.m}月）</td>` + ['total', 'gyomu', 'dandori'].map(k => `<td><b>${fa[k]}</b> <span class="ws-muted">/ ${fb[k]}</span> ${rvDelta(fa[k], fb[k])}</td>`).join('') + '</tr>'
     + '</table></div></details>';
-  html += `<p class="rv-foot">件数は時刻指定のある予定のみ（終日予定は除く）。複数カレンダーの重複は1件。業務報告は①②…の項目数（役職名だけの項目は除く）。段取り対象＝タイトルに「${escHtml(kws.join('・'))}」を含む予定（⚙設定で変更可）。</p>`;
+  html += `<p class="rv-foot">件数は時刻指定のある予定のみ（終日予定は除く）。複数カレンダーの重複は1件。業務報告は①②…の項目数（役職名だけの項目は除く）。段取り対象＝タイトルに「${escHtml(kws.keywords.join('・'))}」を含む予定${kws.descOnly.length ? `と、「${escHtml(kws.descOnly.join('・'))}」を含み説明欄に記入がある予定` : ''}（「${escHtml([...new Set(['業務報告', ...kws.exclude])].join('・'))}」を含む予定は除く）。⚙設定 ＞ 📈 段取り対象の判定 で変更できます。</p>`;
   out.innerHTML = html;
 
   // 前年比較の未登録件数は、照合が終わってから注目ポイントに書き足す
@@ -6584,7 +6704,7 @@ function rvEventRows(items, withGroups) {
   return `<div class="rv-items rv-items-flat">${html}</div>`;
 }
 function rvDandoriHtml(list, p) {
-  const kws = getDandoriKeywords();
+  const kws = getDandoriRules();
   const rows = list.map(ev => ({ ev, d: rvDandori(ev, kws) })).filter(x => x.d.hit)
     .map(x => ({ ...x, c: rvParseContact(rvPlainText(x.ev.description)) }));
   rvLastRows.dandori = rows;
@@ -6625,15 +6745,16 @@ function rvCsvSearch() {
 // 前年の段取り対象を1件ずつ、今年の同じ日付の前後1か月で探す。結果は概要の注目ポイントでも使う
 async function rvComputeCompare(p) {
   const shift = (d, years, months) => { const x = new Date(d); x.setFullYear(x.getFullYear() + years); x.setMonth(x.getMonth() + months); return x; };
-  const key = `${inputMode}|${p.start.toISOString()}|${p.end.toISOString()}|${getDandoriKeywords().join(',')}`;
+  const kws = getDandoriRules();
+  const key = `${inputMode}|${p.start.toISOString()}|${p.end.toISOString()}|${JSON.stringify(kws)}`;   // 判定の語を変えたら照合し直す
   if (rvCompareCache?.key === key) return rvCompareCache.data;
   const loadStart = shift(p.start, -1, -1), loadEnd = shift(p.end, 0, 1);   // 照合に必要な範囲
   const events = await rvLoadEvents(loadStart, loadEnd);
-  const kws = getDandoriKeywords();
   const lastYear = events.filter(ev => rvInRange(ev, p.ly) && rvDandori(ev, kws).hit).sort((a, b) => rvEvStart(a) - rvEvStart(b));
   const tyStart = shift(p.start, 0, -1);
   const thisYear = events.filter(ev => { const s = rvEvStart(ev); return s >= tyStart && s < loadEnd; });
-  const data = { results: rvCompareLastYear(lastYear, thisYear, kws), kws };
+  // 似ているかを比べるとき、両方に入っている語（「取締役会」「来訪」など）は除く。説明欄の条件付きの語も同じ扱い
+  const data = { results: rvCompareLastYear(lastYear, thisYear, [...kws.keywords, ...kws.descOnly]), kws };
   rvCompareCache = { key, data };
   return data;
 }
@@ -6704,7 +6825,7 @@ renderUpdateBar();
 renderStorageNotice();
 renderOtOkKwSection();
 renderThemeUI();
-renderDandoriKeywords();
+renderDandoriLists();   // 初期値に足した語があれば、ここで編集済みの一覧にも足される
 renderDandoriLinkUI();
 updateApiSetupHint();
 ['calSelect', 'calSelect2', 'calSelect3'].forEach(id => document.getElementById(id)?.addEventListener('change', updateCalSummary));
@@ -6803,8 +6924,8 @@ window.rvCsvDandori  = rvCsvDandori;
 window.rvCsvSearch   = rvCsvSearch;
 window.rvCsvCompare  = rvCsvCompare;
 window.rvShiftMonth  = rvShiftMonth;
-window.saveDandoriKeywords  = saveDandoriKeywords;
-window.resetDandoriKeywords = resetDandoriKeywords;
+window.saveDandoriList  = saveDandoriList;
+window.resetDandoriList = resetDandoriList;
 window.setDandoriLink = setDandoriLink;
 window.exportDandoriImport = exportDandoriImport;
 window.toggleTheme   = toggleTheme;
