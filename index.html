@@ -977,12 +977,19 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 .dvo-badge { height: 38px; border-radius: 6px; outline: 1px solid var(--border); }
 .dvo-title { font-size: 1rem; font-weight: 700; color: var(--text); }
 .dvo-period { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 0.9rem; margin-bottom: 12px; }
+.dvo-period[hidden] { display: none; }   /* 上の display:flex が hidden を打ち消さないように */
 .dvo-note { font-size: 0.75rem; color: var(--text-muted); }
 .dvo-btn { background: var(--driver); color: var(--on-driver); font-size: 1rem; padding: 12px 26px; }
 .dvo-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
 .dvo-btn:disabled { opacity: 0.6; cursor: wait; transform: none; }
 .dvo-starred { margin-top: 10px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); font-size: 0.82rem; line-height: 1.7; }
-.dvo-starred ul { margin: 4px 0 0 18px; }
+.dvo-star-head { margin-top: 8px; font-size: 0.82rem; color: var(--text); }
+.dvo-starred .dvo-star-list { list-style: none; margin: 4px 0 10px; padding: 0; }
+.dvo-star-list li { padding: 3px 0; border-bottom: 1px solid var(--border); }
+.dvo-star-list label { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; margin: 0; cursor: pointer; color: var(--text); font-size: 0.82rem; }
+.dvo-star-list input[type="checkbox"] { width: auto; margin: 0; accent-color: var(--driver); }
+.dvo-reason { font-size: 0.75rem; color: var(--text-muted); }
+.dvo-pending { font-size: 0.72rem; padding: 0 6px; border-radius: 8px; border: 1px solid var(--driver); color: var(--text); }
 
 /* 業務報告：報告1回の課をまとめた欄 */
 .rv-single { margin-top: 12px; }
@@ -999,7 +1006,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   <div class="header-row">
     <h1>Googleカレンダー → Excel 変換<span class="header-suffix">（Webアプリ）</span></h1>
     <div class="header-actions">
-      <div class="header-version" onclick="showChangelog()" title="クリックで更新履歴を表示">v1.19.0&nbsp;&nbsp;•&nbsp;&nbsp;2026-10-22</div>
+      <div class="header-version" onclick="showChangelog()" title="クリックで更新履歴を表示">v1.19.2&nbsp;&nbsp;•&nbsp;&nbsp;2026-10-23</div>
       <button type="button" class="hdr-btn" id="themeBtn" onclick="toggleTheme()" title="ダーク／ライトを切り替え">🌙</button>
       <button type="button" class="hdr-btn" id="navReviewBtn" onclick="toggleView('review')" title="月別の振り返り（テスト運用中）">📈 振り返り<span class="test-badge">テスト</span></button>
       <button type="button" class="hdr-btn" id="navSettingsBtn" onclick="toggleView('settings')" title="一度決めたらあまり変えない設定">⚙ 設定</button>
@@ -1240,17 +1247,22 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     <img id="dvoBadge" class="dvo-badge" alt="運転手用" hidden>
     <div class="dvo-title">運転手用の出力</div>
   </div>
-  <p class="hint" style="margin-top:0">運転手に渡す紙です。様式は通常の出力と同じで、件名と場所を実際のまま出し、夕方の予定や重なった予定も隠しません。② で選んだ期間とは関係なく、次の月曜から出します。</p>
+  <p class="hint" style="margin-top:0">運転手に渡す紙です。様式は通常の出力と同じで、夕方の予定や重なった予定も隠しません。「※」で始まる予定と、「予定あり」などに件名が変わる予定は、ボタンの下の一覧でチェックしたものだけ実際の件名で出します。② で選んだ期間とは関係なく、次の月曜から出します。</p>
   <div class="dvo-period">
     <span>📅 期間：<b id="dvoPeriod">—</b></span>
-    <button type="button" class="btn btn-secondary btn-sm" onclick="toggleDriverWeeks()" title="年末年始や連休前など、例外的に週数を変えるとき">変更</button>
-    <span id="dvoWeeksWrap" hidden>
-      <select id="dvoWeeks" onchange="setDriverWeeks(this.value)" style="width:auto;margin:0">
-        <option value="1">1週</option><option value="2">2週</option><option value="3">3週</option>
-        <option value="4">4週</option><option value="5">5週</option><option value="6">6週</option>
-      </select>
-      <span class="dvo-note">（覚えません。次に開くと3週に戻ります）</span>
-    </span>
+    <button type="button" class="btn btn-secondary btn-sm" onclick="toggleDriverWeeks()" title="年末年始や連休前、過去の週で試すときなど、例外的に期間を変えるとき">変更</button>
+  </div>
+  <div id="dvoWeeksWrap" class="dvo-period" hidden>
+    <span>開始週</span>
+    <button type="button" class="btn btn-secondary btn-nav" onclick="shiftDriverStart(-1)" title="1週前へ（過去の週も選べます）">◀</button>
+    <button type="button" class="btn btn-secondary btn-nav" onclick="shiftDriverStart(1)" title="1週後へ">▶</button>
+    <button type="button" class="btn btn-secondary btn-sm" onclick="resetDriverStart()">次の月曜に戻す</button>
+    <span>週数</span>
+    <select id="dvoWeeks" onchange="setDriverWeeks(this.value)" style="width:auto;margin:0">
+      <option value="1">1週</option><option value="2">2週</option><option value="3">3週</option>
+      <option value="4">4週</option><option value="5">5週</option><option value="6">6週</option>
+    </select>
+    <span class="dvo-note">（どちらも覚えません。次に開くと「次の月曜から3週」に戻ります）</span>
   </div>
   <div class="btn-row">
     <button class="btn dvo-btn" id="dvoBtn" onclick="exportDriverExcel()">🚗 運転手用の Excel を保存</button>
@@ -1692,18 +1704,23 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
           <h4>🚗 運転手用の出力</h4>
           <p>運転手に渡す紙を作ります。① 接続が済んでいれば、② ③ を使わずに、出力画面のいちばん下の「<strong>🚗 運転手用の Excel を保存</strong>」を押すだけで保存できます。</p>
           <ul>
-            <li><strong>期間</strong>：押した日の次の月曜から3週分です（月曜に押したときは翌週の月曜から）。② で選んだ開始日・週数とは関係ありません。年末年始などで週数を変えたいときは「変更」で1〜6週を選びます。選んだ週数は覚えないので、次に開くと3週に戻ります</li>
+            <li><strong>期間</strong>：押した日の次の月曜から3週分です（月曜に押したときは翌週の月曜から）。② で選んだ開始日・週数とは関係ありません。年末年始などで変えたいときは「変更」を押し、開始週を ◀ ▶ で前後に動かすか（過去の週も選べます）、週数を1〜6週から選びます。どちらも覚えないので、次に開くと「次の月曜から3週」に戻ります</li>
             <li><strong>予定の取り方</strong>：Google API のときは、押すたびにその期間をカレンダーから取り直します。.ics のときは、読み込んだファイルから期間で絞ります</li>
             <li><strong>通常の出力との違い</strong>：罫線・色・フォント・1週1ページの様式は同じです。違うのは次の4点だけです
               <ul>
-                <li>件名と場所を実際のまま出します（「予定あり」「来客あり」などへの変換や、場所を「水戸市内」のように丸める処理をしません）。場所が空欄で「※場所・送迎等確認中」が付く予定には、運転手用でも付けます</li>
+                <li>件名と場所を実際のまま出します（場所を「水戸市内」のように丸めません）。ただし、「予定あり」「来客あり」などに件名が変わる予定は、<strong>チェックを入れたものだけ</strong>実際の件名と場所で出し、チェックしない予定は通常の出力と同じに出します（下の「出す予定の選び方」）。場所が空欄で「※場所・送迎等確認中」が付く予定には、運転手用でも付けます</li>
                 <li>17時以降の予定がすべて入るまで、時間外の行を増やします（その週で最も多い日に合わせます。行が増えた週は印刷が少し小さくなります）</li>
                 <li>同じ時間に重なった予定を隠さず、同じ枠に書き足します（「◆非表示予定◆」の印は付きません）</li>
-                <li>「※」で始まる予定のうち、同じ日の直前か直後が「移動」の予定と、場所が庁外（応接室・県庁・庁舎・オンラインなど庁内扱いの語を含まない場所）の予定を出します。場所が空欄で前後に移動もない予定は出しません</li>
+                <li>「※」で始まる予定は、<strong>チェックを入れたものだけ</strong>出します（下の「出す予定の選び方」）</li>
               </ul>
             </li>
+            <li><strong>出す予定の選び方</strong>：ボタンの下の一覧に、次の2種類の予定が出ます。初めはどれもチェックなしです。運転手に要る予定にチェックを入れてください
+              <ul>
+                <li>「※」で始まる予定：同じ日の直前か直後が「移動」の予定と、場所が庁外（応接室・県庁・庁舎・オンラインなど庁内扱いの語を含まない場所）の予定。チェックしない予定は出しません</li>
+                <li>件名が変わる予定：タイトル変換ルールや人名で「予定あり」「来客あり」などになる予定。チェックしない予定は、通常の出力と同じ件名・場所で出します</li>
+              </ul>
+              まだ選んでいない予定があるときは、保存せずに一覧が出るので、選んでから「この選択で保存」を押します（選ばなかった予定はチェックなしになります）。選んだ結果はこのブラウザに保存され、次の週に同じ予定を選び直す必要はありません。保存したあとも一覧のチェックを変えて、保存し直せます</li>
             <li><strong>見分け方</strong>：右上にハンドルの目印、表題に「（運転手用）」が付きます。ファイル名は「基本名_運転手用_作成日.xlsx」です</li>
-            <li>保存すると、出した「※」の予定の一覧がボタンの下に出ます。私的な予定も件名どおり紙に載るので、渡す前に確かめてください</li>
           </ul>
           <p class="note">運転手用を保存しても、② の期間、取得済みの予定、今週のまとめ、「前回の出力からの変化」の記録は変わりません。</p>
         </div>
@@ -3125,6 +3142,19 @@ for (const b of Object.values(EV_XF)) {
 
 
 const CHANGELOG = [
+  {
+    version: '1.19.2', date: '2026-10-23',
+    changes: [
+      { type: 'change', text: '運転手用の出力で、タイトル変換ルールや人名で件名が変わる予定（「予定あり」「来客あり」など）も、一覧で選べるようにしました。チェックを入れた予定は実際の件名と場所で、チェックしない予定は通常の出力と同じに出します（初めはチェックなし）。選んだ結果は「※」の予定と同じく、このブラウザに保存されます' },
+    ],
+  },
+  {
+    version: '1.19.1', date: '2026-10-23',
+    changes: [
+      { type: 'change', text: '運転手用の出力で、「※」で始まる予定は、チェックを入れたものだけを出すようにしました（初めは「出さない」）。前後に「移動」がある予定と場所が庁外の予定が、候補として一覧に出ます。選んだ結果はこのブラウザに保存されるので、次の週に同じ予定を選び直す必要はありません。まだ選んでいない予定があるときは、保存の前に一覧が出ます' },
+      { type: 'feature', text: '運転手用の「変更」で、開始週を ◀ ▶ で前後に動かせるようにしました（過去の週でも出せます）。週数と同じく覚えないので、次に開くと「次の月曜から3週」に戻ります' },
+    ],
+  },
   {
     version: '1.19.0', date: '2026-10-22',
     changes: [
@@ -5710,21 +5740,23 @@ async function exportExcel(opts = {}) {
     });
     drvDays.forEach(evs => evs.sort((a, b) => new Date(a.start.dateTime) - new Date(b.start.dateTime)));
   }
-  // 「※」で始まる予定のうち、運転手用に出すもの：同じ日の直前か直後が「移動」／場所が庁外（庁内扱いの語を含まない）。
-  // 庁内扱いの語は「移動なしの確認」と同じ一覧（OUTING_INTERNAL_LOC）を使う
-  function drvStarredOk(ev) {
+  // 「※」で始まる予定のうち、運転手用に出す候補：同じ日の直前か直後が「移動」／場所が庁外（庁内扱いの語を含まない）。
+  // 当てはまる理由を返す（当てはまらなければ ''）。庁内扱いの語は「移動なしの確認」と同じ一覧（OUTING_INTERNAL_LOC）を使う
+  function drvStarredReason(ev) {
     const evs = drvDays.get(toDateStr(new Date(ev.start.dateTime))) || [];
     const i = evs.indexOf(ev);
     const isMove = e => !!e && /移動/.test(stripHtml(e.summary || ''));
-    if (i >= 0 && (isMove(evs[i - 1]) || isMove(evs[i + 1]))) return true;
+    if (i >= 0 && (isMove(evs[i - 1]) || isMove(evs[i + 1]))) return '前後に「移動」あり';
     const loc = cleanLocation(stripHtml(ev.location || '')).trim();
-    return !!loc && !OUTING_INTERNAL_LOC.some(k => loc.includes(k));
+    return (loc && !OUTING_INTERNAL_LOC.some(k => loc.includes(k))) ? '場所が庁外' : '';
   }
-  // 運転手用で除外する予定か（「床屋」「散髪」は通常どおり除外。「※」は上の条件に当てはまらなければ除外）
+  // 候補のうち、実際に出すのは利用者がチェックを入れた予定だけ（v1.19.1〜。選んだ結果は drv.choices）
+  const drvShow = ev => drv?.choices?.[driverStarKey(ev)]?.show === true;
+  // 運転手用で除外する予定か（「床屋」「散髪」は通常どおり除外。「※」は候補でチェック済みのものだけ残す）
   function drvExcluded(ev) {
     const raw = stripHtml(ev.summary || '').replace(/※日程は確定[^\n]*/g,'').replace(/※[^\n]*確定[^\n]*/g,'').trim();
     if (raw.includes('床屋') || raw.includes('散髪')) return true;
-    return raw.startsWith('※') && !drvStarredOk(ev);
+    return raw.startsWith('※') && !(drvStarredReason(ev) && drvShow(ev));
   }
   // 運転手用：その週の時間外に要る行数（時間外の予定が最も多い日に合わせる。日中から17時をまたぐ予定の分も足す）
   function drvOtNeed(w) {
@@ -5751,7 +5783,7 @@ async function exportExcel(opts = {}) {
   let TR = 0;
   for (let w = 0; w < weeks; w++) { weekRo.push(TR); TR += BLKHDR + SLOTS + otRowsOf[w] + BLKFTR; }
   const weekEndRow = w => (w + 1 < weeks ? weekRo[w + 1] : TR);   // その週の次の行（週の範囲は weekRo[w] 〜 この手前）
-  const drvStarred = [];   // 運転手用に出した「※」の予定（画面で確かめられるように一覧にする）
+  const drvStarred = [];   // 運転手用に出す候補の「※」の予定（画面の一覧で、出すかどうかを選ぶ）
   const cells = Array.from({length:TR}, () => Array(COLS).fill(null));
   { const n=new Date(); var outDateStr=`${n.getFullYear()}/${String(n.getMonth()+1).padStart(2,'0')}/${String(n.getDate()).padStart(2,'0')} ${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`; }
   const merges = [];
@@ -6063,9 +6095,11 @@ async function exportExcel(opts = {}) {
       }
       const rawSummary = (ev.summary||'').replace(/※日程は確定[^\n]*/g,'').replace(/※[^\n]*確定[^\n]*/g,'').trim();
       // 「ブロック」は除外せず表示（項目2で「予定あり」変換キーワードに含める）。※始まり・床屋・散髪は従来どおり除外
-      // 運転手用だけは、「※」で始まる予定のうち前後が「移動」か場所が庁外のものを出す（drvStarredOk）
-      const drvShowStar = !!drv && rawSummary.startsWith('※') && !rawSummary.includes('床屋') && !rawSummary.includes('散髪') && drvStarredOk(ev);
-      if (drvShowStar) drvStarred.push({ when: `${dateTag} ${pad(evStart.getHours())}:${pad(evStart.getMinutes())}`, title: rawSummary, loc: cleanLoc });
+      // 運転手用だけは、「※」で始まる予定のうち前後が「移動」か場所が庁外のもの（候補）から、チェックを入れた予定を出す
+      const drvReason = (!!drv && rawSummary.startsWith('※') && !rawSummary.includes('床屋') && !rawSummary.includes('散髪')) ? drvStarredReason(ev) : '';
+      const drvShowStar = !!drvReason && drvShow(ev);
+      const drvWhen = `${dateTag} ${pad(evStart.getHours())}:${pad(evStart.getMinutes())}`;
+      if (drvReason) drvStarred.push({ kind: 'star', key: driverStarKey(ev), date: toDateStr(evStart), when: drvWhen, title: rawSummary, loc: cleanLoc, reason: drvReason, show: drvShowStar });
       if (!drvShowStar && (rawSummary.startsWith('※') || rawSummary.includes('床屋') || rawSummary.includes('散髪'))) {
         const reason = rawSummary.startsWith('※')   ? '「※」で始まる'
                      : rawSummary.includes('床屋')  ? '「床屋」を含む'
@@ -6086,7 +6120,17 @@ async function exportExcel(opts = {}) {
       }
       let displayMain = null;
       let forceTrailingPeriod = false;
-      if (drv) {
+      // 運転手用：タイトル変換ルールや人名で件名が変わる予定は候補にし、チェックを入れた予定だけ実際の件名・場所で出す（v1.19.2〜）。
+      // チェックしない予定は通常の出力と同じ（下の通常の処理を通す）。「※」の予定は上の「※」の候補で扱うので除く
+      let drvReal = !!drv;
+      if (drv && !rawSummary.startsWith('※') && !main.startsWith('予定あり')) {
+        const mc = matchTitleRule(rawSummary, main);
+        if (mc) {
+          drvReal = drvShow(ev);
+          drvStarred.push({ kind: 'conv', key: driverStarKey(ev), date: toDateStr(evStart), when: drvWhen, title: rawSummary, loc: cleanLoc, reason: `通常は「${mc.label}」`, show: drvReal });
+        }
+      }
+      if (drvReal) {
         // 運転手用：件名・場所は実際のまま（タイトル変換と、場所を市町村名に丸める処理をしない）。
         // ただし通常の出力で「※場所・送迎等確認中」が付く予定（場所が空欄）には、運転手にも必要な注意書きなので同じく付ける
         if (!rawLoc.trim()) {
@@ -6108,7 +6152,7 @@ async function exportExcel(opts = {}) {
           forceTrailingPeriod = true;
         }
       }
-      if (!drv && displayMain === null) {
+      if (!drvReal && displayMain === null) {
         // 判定は matchTitleRule に集約（「変換テスト」欄と同じロジック）
         const m = matchTitleRule(rawSummary, main);
         if (m && m.type === 'rule') {
@@ -6446,6 +6490,7 @@ async function exportExcel(opts = {}) {
 
   // 運転手用：ファイルを作って保存するだけ。今週のまとめ・処理ログ・前回の出力の記録・③の完了表示には触れない。
   // エラーは呼び出し側（exportDriverExcel）で表示する
+  if (drv && drv.collectOnly) return { starred: drvStarred };   // 候補を調べるだけ（ファイルは作らない）
   if (drv) {
     let badge = null;
     try { badge = await makeDriverBadgePng(); } catch (e) { console.warn('driver badge error:', e); }   // 目印が作れなくても、表題の（運転手用）で区別できる
@@ -6488,9 +6533,14 @@ async function exportExcel(opts = {}) {
 // 期間は「押した日の次の月曜から」。② 期間の開始日・週数とは連動させない（木曜に開くと今週が初期値のため）
 const DRIVER_WEEKS_DEFAULT = 3;
 let driverWeeks = DRIVER_WEEKS_DEFAULT;   // 例外的に変えても記憶しない（翌週に持ち越さないため）
+let driverOffset = 0;                     // 開始週を「次の月曜」から何週ずらすか（負＝過去。v1.19.1〜。これも記憶しない）
 function driverMonday(now = new Date()) {
   const d = new Date(now); d.setHours(0, 0, 0, 0);
   d.setDate(d.getDate() + ((8 - d.getDay()) % 7 || 7));   // 次の月曜（月曜に押したら翌週の月曜）
+  return d;
+}
+function driverStart() {
+  const d = driverMonday(); d.setDate(d.getDate() + driverOffset * 7);
   return d;
 }
 function driverPeriodText(monday, weeks) {
@@ -6499,9 +6549,38 @@ function driverPeriodText(monday, weeks) {
 }
 function renderDriverPeriod() {
   const el = document.getElementById('dvoPeriod');
-  if (el) el.textContent = driverPeriodText(driverMonday(), driverWeeks);
+  if (el) el.textContent = driverPeriodText(driverStart(), driverWeeks) + (driverOffset ? '（開始週を変更中）' : '');
   const sel = document.getElementById('dvoWeeks');
   if (sel) sel.value = String(driverWeeks);
+}
+function shiftDriverStart(delta) {
+  driverOffset = Math.max(-52, Math.min(12, driverOffset + delta));
+  renderDriverPeriod();
+}
+function resetDriverStart() { driverOffset = 0; renderDriverPeriod(); }
+
+// 運転手用に出すかどうかの選択（「※」の予定・件名が変わる予定。このブラウザに保存。予定ごとに覚え、次の週に選び直さなくて済むように）
+//   key：Google API は予定のID、.ics は件名＋開始日時（.ics にはIDが無いため。件名や時刻を変えると未選択に戻る）
+//   値：{ show: 出すか, date: 予定の日付 }。予定の日付から120日を過ぎた記録は、保存のときに消す
+const DRIVER_STAR_KEY = 'gcal_driver_star_choices';
+function driverStarKey(ev) { return ev.id || `${stripHtml(ev.summary || '')}|${ev.start?.dateTime || ''}`; }
+function loadDriverStarChoices() {
+  try { return JSON.parse(localStorage.getItem(DRIVER_STAR_KEY) || '{}') || {}; } catch (e) { return {}; }
+}
+function saveDriverStarChoices(choices) {
+  const limit = new Date(); limit.setDate(limit.getDate() - 120);
+  const keep = Object.fromEntries(Object.entries(choices).filter(([, v]) => !v.date || new Date(v.date + 'T00:00:00') >= limit));
+  try { localStorage.setItem(DRIVER_STAR_KEY, JSON.stringify(keep)); } catch (e) {}
+}
+let driverStarCands = [];   // 画面の一覧に出している候補（チェックボックスの番号と対応）
+function setDriverStarChoice(i, show) {
+  const c = driverStarCands[i];
+  if (!c) return;
+  const choices = loadDriverStarChoices();
+  choices[c.key] = { show: !!show, date: c.date };
+  saveDriverStarChoices(choices);
+  c.show = !!show; c.decided = true;
+  renderDriverStarred();
 }
 function toggleDriverWeeks() {
   const wrap = document.getElementById('dvoWeeksWrap');
@@ -6543,17 +6622,37 @@ async function loadDriverEvents(monday, weeks) {
   });
   return { events: JSON.parse(JSON.stringify(events)), holidays: new Map(icsHolidays) };
 }
-async function exportDriverExcel() {
-  const monday = driverMonday(), weeks = driverWeeks;
+// opts.confirmed：一覧の「この選択で保存」から呼ばれた（まだ選んでいない候補は「出さない」と決めて保存する）
+async function exportDriverExcel(opts = {}) {
+  const monday = driverStart(), weeks = driverWeeks;
   renderDriverPeriod();   // ページを開いたまま日付が変わっていても、押した日で数え直す
   const btn = document.getElementById('dvoBtn');
   if (btn) btn.disabled = true;
   setLog('logDriver', '予定を取得しています…', '');
   try {
     const { events, holidays } = await loadDriverEvents(monday, weeks);
-    const res = await exportExcel({ driver: { monday, weeks, events, holidays } });
-    setLog('logDriver', `✓ ${res.outName} を保存しました（${driverPeriodText(monday, weeks)}）`, 'ok');
-    renderDriverStarred(res.starred);
+    // ① 先に「※」の候補だけを調べる（ファイルは作らない。予定は書き換えられるので複製を渡す）
+    const choices = loadDriverStarChoices();
+    const pre = await exportExcel({ driver: { monday, weeks, events: JSON.parse(JSON.stringify(events)), holidays, choices, collectOnly: true } });
+    const pending = pre.starred.filter(s => !(s.key in choices));
+    if (pending.length && opts.confirmed) {
+      pending.forEach(s => { choices[s.key] = { show: false, date: s.date }; });   // 選ばなかった候補は「出さない」
+      saveDriverStarChoices(choices);
+    } else if (pending.length) {
+      // まだ選んでいない候補があれば、保存せずに一覧を出して選んでもらう
+      driverStarCands = pre.starred.map(s => ({ ...s, decided: s.key in choices }));
+      renderDriverStarred();
+      setLog('logDriver', `運転手用に出すかどうか、まだ選んでいない予定が ${pending.length}件あります。下の一覧でチェックを入れて「この選択で保存」を押してください（チェックしない予定は、通常の出力と同じに出します。「※」の予定は出しません）`, 'err');
+      return;
+    }
+    // ② 選んだ結果で保存する
+    const res = await exportExcel({ driver: { monday, weeks, events, holidays, choices } });
+    driverStarCands = res.starred.map(s => ({ ...s, decided: true }));
+    const count = kind => { const l = res.starred.filter(s => s.kind === kind); return [l.length, l.filter(s => s.show).length]; };
+    const [starN, starShown] = count('star'), [convN, convShown] = count('conv');
+    const notes = [starN ? `「※」の予定は ${starN}件中 ${starShown}件を出しました` : '', convN ? `件名が変わる予定は ${convN}件中 ${convShown}件を実際の件名で出しました` : ''].filter(Boolean);
+    setLog('logDriver', `✓ ${res.outName} を保存しました（${driverPeriodText(monday, weeks)}${notes.length ? '・' + notes.join('・') : ''}）`, 'ok');
+    renderDriverStarred();
   } catch (e) {
     console.error(e);
     setLog('logDriver', e.authExpired
@@ -6563,15 +6662,29 @@ async function exportDriverExcel() {
     if (btn) btn.disabled = false;
   }
 }
-// 出した「※」の予定の一覧。私的な予定も件名どおり紙に載るので、渡す前に確かめられるように画面に出す
-function renderDriverStarred(list) {
+// 運転手用に出すかどうかを選ぶ一覧。私的な予定が件名どおり紙に載るので、利用者が1件ずつ決める。
+//   「※」の予定：チェックを入れた予定だけ紙に載る（しなければ出さない）
+//   件名が変わる予定（タイトル変換ルール・人名）：チェックを入れた予定は実際の件名・場所で、しなければ通常の出力と同じに出す
+function renderDriverStarred() {
   const el = document.getElementById('dvoStarred');
   if (!el) return;
   el.hidden = false;
-  if (!list.length) { el.textContent = '「※」で始まる予定は出していません。'; return; }
-  el.innerHTML = `「※」で始まる予定のうち、運転手用に出したもの（${list.length}件）<ul>`
-    + list.map(s => `<li>${escHtml(s.when)}　${escHtml(s.title)}${s.loc ? `（${escHtml(s.loc)}）` : '（前後に「移動」あり）'}</li>`).join('')
-    + '</ul>';
+  const list = driverStarCands;
+  if (!list.length) { el.textContent = '運転手用に出すかどうかを選ぶ予定（「※」の予定・件名が変わる予定）はありません。'; return; }
+  const item = (s, i) => `<li><label><input type="checkbox" onchange="setDriverStarChoice(${i}, this.checked)"${s.show ? ' checked' : ''}> `
+    + `${escHtml(s.when)}　${escHtml(s.title)}${s.loc ? `（${escHtml(s.loc)}）` : ''}<span class="dvo-reason">${escHtml(s.reason)}</span>`
+    + `${s.decided ? '' : '<span class="dvo-pending">未選択</span>'}</label></li>`;
+  // 番号（i）は driverStarCands 全体での位置。欄ごとに分けて表示する
+  const section = (kind, head) => {
+    const rows = list.map((s, i) => s.kind === kind ? item(s, i) : '').join('');
+    return rows ? `<div class="dvo-star-head">${head}</div><ul class="dvo-star-list">${rows}</ul>` : '';
+  };
+  const pending = list.filter(s => !s.decided).length;
+  el.innerHTML = '運転手用に出すかどうかを選ぶ予定です（選んだ結果はこのブラウザに保存されます）'
+    + section('star', '「※」で始まる予定：<b>チェックを入れた予定だけ</b>紙に載ります')
+    + section('conv', '件名が変わる予定：チェックを入れた予定は<b>実際の件名と場所</b>で、しない予定は通常の出力と同じ（「予定あり」など）で載ります')
+    + `<button type="button" class="btn btn-secondary btn-sm" onclick="exportDriverExcel({ confirmed: true })">この選択で保存</button>`
+    + (pending ? `<span class="dvo-note">　未選択の ${pending}件は、チェックなし（「※」は出さない・件名が変わる予定は通常の出力と同じ）として保存します</span>` : '');
 }
 // 目印（ハンドルの図＋「運転手用」）を描く。白黒で印刷しても分かるよう、黒地に白抜きにする。
 // ハンドルは円と線だけで描く（Unicode にハンドルの文字は無く、似た形の「☸」は法輪なので使わない）
@@ -7357,6 +7470,9 @@ window.exportExcel   = exportExcel;
 window.exportDriverExcel = exportDriverExcel;
 window.toggleDriverWeeks = toggleDriverWeeks;
 window.setDriverWeeks    = setDriverWeeks;
+window.shiftDriverStart  = shiftDriverStart;
+window.resetDriverStart  = resetDriverStart;
+window.setDriverStarChoice = setDriverStarChoice;
 window.setWeekCount  = setWeekCount;
 window.copyProcessLog = copyProcessLog;
 window.toggleDetailLogs = toggleDetailLogs;
