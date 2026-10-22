@@ -30,6 +30,8 @@
   --code-bg: #2a2a2a;
   --picker-filter: invert(1) opacity(0.6);   /* 日付欄のカレンダーアイコンを暗背景で見えるように */
   --test-badge-fg: #c77700;  /* 「テスト運用中」の札の文字色 */
+  --driver: #fbbf24;         /* 🚗 運転手用の出力（カードの枠・ボタン）。通常の出力と見分けるための色 */
+  --on-driver: #1a1a1a;
 }
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
@@ -39,6 +41,7 @@
     --text: #1f2328; --text-muted: #5b6573; --danger: #c62828; --code-bg: #e8ebef;
     --picker-filter: opacity(0.7);
     --test-badge-fg: #8a5300;  /* ライト背景では濃くして読みやすく */
+    --driver: #b45309; --on-driver: #ffffff;
   }
 }
 :root[data-theme="light"] {
@@ -48,6 +51,7 @@
   --text: #1f2328; --text-muted: #5b6573; --danger: #c62828; --code-bg: #e8ebef;
   --picker-filter: opacity(0.7);
   --test-badge-fg: #8a5300;
+  --driver: #b45309; --on-driver: #ffffff;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -967,6 +971,19 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   .rv-col-v { font-size: 0.6rem; }
 }
 
+/* 🚗 運転手用の出力（出力画面のいちばん下）。枠とボタンの色で通常の出力と見分ける */
+.dvo-card { border: 2px solid var(--driver); }
+.dvo-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.dvo-badge { height: 38px; border-radius: 6px; outline: 1px solid var(--border); }
+.dvo-title { font-size: 1rem; font-weight: 700; color: var(--text); }
+.dvo-period { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 0.9rem; margin-bottom: 12px; }
+.dvo-note { font-size: 0.75rem; color: var(--text-muted); }
+.dvo-btn { background: var(--driver); color: var(--on-driver); font-size: 1rem; padding: 12px 26px; }
+.dvo-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.dvo-btn:disabled { opacity: 0.6; cursor: wait; transform: none; }
+.dvo-starred { margin-top: 10px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); font-size: 0.82rem; line-height: 1.7; }
+.dvo-starred ul { margin: 4px 0 0 18px; }
+
 /* 業務報告：報告1回の課をまとめた欄 */
 .rv-single { margin-top: 12px; }
 .rv-item-unit .rv-item-main b { color: var(--text); }
@@ -982,7 +999,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   <div class="header-row">
     <h1>Googleカレンダー → Excel 変換<span class="header-suffix">（Webアプリ）</span></h1>
     <div class="header-actions">
-      <div class="header-version" onclick="showChangelog()" title="クリックで更新履歴を表示">v1.18.0&nbsp;&nbsp;•&nbsp;&nbsp;2026-10-21</div>
+      <div class="header-version" onclick="showChangelog()" title="クリックで更新履歴を表示">v1.19.0&nbsp;&nbsp;•&nbsp;&nbsp;2026-10-22</div>
       <button type="button" class="hdr-btn" id="themeBtn" onclick="toggleTheme()" title="ダーク／ライトを切り替え">🌙</button>
       <button type="button" class="hdr-btn" id="navReviewBtn" onclick="toggleView('review')" title="月別の振り返り（テスト運用中）">📈 振り返り<span class="test-badge">テスト</span></button>
       <button type="button" class="hdr-btn" id="navSettingsBtn" onclick="toggleView('settings')" title="一度決めたらあまり変えない設定">⚙ 設定</button>
@@ -1215,6 +1232,31 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     <button class="btn btn-secondary" id="dandoriExportBtn" onclick="exportDandoriImport()" hidden title="今日から6か月先までの段取り対象を、段取り管理アプリで取り込めるファイル（JSON）に保存します">📤 段取り管理アプリ用ファイルを保存</button>
   </div>
   <div class="log" id="log3"></div>
+</div>
+
+<!-- 🚗 運転手用の出力（v1.19.0〜）：① 接続が済めば、② ③ を経なくても使える。期間は「次の月曜から」で ② とは連動しない -->
+<div class="card dvo-card" id="cardDriver" style="opacity:0.4;pointer-events:none">
+  <div class="dvo-head">
+    <img id="dvoBadge" class="dvo-badge" alt="運転手用" hidden>
+    <div class="dvo-title">運転手用の出力</div>
+  </div>
+  <p class="hint" style="margin-top:0">運転手に渡す紙です。様式は通常の出力と同じで、件名と場所を実際のまま出し、夕方の予定や重なった予定も隠しません。② で選んだ期間とは関係なく、次の月曜から出します。</p>
+  <div class="dvo-period">
+    <span>📅 期間：<b id="dvoPeriod">—</b></span>
+    <button type="button" class="btn btn-secondary btn-sm" onclick="toggleDriverWeeks()" title="年末年始や連休前など、例外的に週数を変えるとき">変更</button>
+    <span id="dvoWeeksWrap" hidden>
+      <select id="dvoWeeks" onchange="setDriverWeeks(this.value)" style="width:auto;margin:0">
+        <option value="1">1週</option><option value="2">2週</option><option value="3">3週</option>
+        <option value="4">4週</option><option value="5">5週</option><option value="6">6週</option>
+      </select>
+      <span class="dvo-note">（覚えません。次に開くと3週に戻ります）</span>
+    </span>
+  </div>
+  <div class="btn-row">
+    <button class="btn dvo-btn" id="dvoBtn" onclick="exportDriverExcel()">🚗 運転手用の Excel を保存</button>
+  </div>
+  <div class="log" id="logDriver"></div>
+  <div id="dvoStarred" class="dvo-starred" hidden></div>
 </div>
 
 </div><!-- /viewMain -->
@@ -1550,6 +1592,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
           <h4>画面の構成</h4>
           <ul>
             <li><strong>出力画面</strong>（起動時）：① 接続 → ② 期間 → ③ 確認 → ④ 出力。毎日の作業はここだけで終わります</li>
+            <li><strong>🚗 運転手用の出力</strong>（出力画面のいちばん下）：運転手に渡す紙を、ボタン1つで次の月曜から3週分保存します（3章）</li>
             <li><strong>📈 振り返り</strong>（右上・<span class="test-badge">テスト運用中</span>）：月別の比較、業務報告の履歴、段取り対象の一覧、予定の検索、前年同時期との比較</li>
             <li><strong>⚙ 設定</strong>（右上）：資料タイトル・運転手・変換ルール・色・認証など、一度決めたらあまり変えないもの</li>
             <li><strong>❓ ヘルプ</strong>（右上）：このマニュアル</li>
@@ -1645,6 +1688,24 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
             <li>任意：「📋 業務報告枠リスト」で業務報告の時間枠をコピー</li>
           </ol>
           <p class="note"><strong>📋 業務報告枠リストとは？</strong>　出力日以降の平日について、業務報告イベントの時間枠を日付ごとに一覧にし、コピー用のテキストとして出力します（例：<code>5/19（月）9:00〜10:00</code>）。45分以下の枠には <code>（△）</code> が付き、枠がない平日は「業務報告枠なし」と表示されます。祝日は含みません。「知事業務報告」は対象外（副知事分のみ）です。</p>
+
+          <h4>🚗 運転手用の出力</h4>
+          <p>運転手に渡す紙を作ります。① 接続が済んでいれば、② ③ を使わずに、出力画面のいちばん下の「<strong>🚗 運転手用の Excel を保存</strong>」を押すだけで保存できます。</p>
+          <ul>
+            <li><strong>期間</strong>：押した日の次の月曜から3週分です（月曜に押したときは翌週の月曜から）。② で選んだ開始日・週数とは関係ありません。年末年始などで週数を変えたいときは「変更」で1〜6週を選びます。選んだ週数は覚えないので、次に開くと3週に戻ります</li>
+            <li><strong>予定の取り方</strong>：Google API のときは、押すたびにその期間をカレンダーから取り直します。.ics のときは、読み込んだファイルから期間で絞ります</li>
+            <li><strong>通常の出力との違い</strong>：罫線・色・フォント・1週1ページの様式は同じです。違うのは次の4点だけです
+              <ul>
+                <li>件名と場所を実際のまま出します（「予定あり」「来客あり」などへの変換や、場所を「水戸市内」のように丸める処理をしません）。場所が空欄で「※場所・送迎等確認中」が付く予定には、運転手用でも付けます</li>
+                <li>17時以降の予定がすべて入るまで、時間外の行を増やします（その週で最も多い日に合わせます。行が増えた週は印刷が少し小さくなります）</li>
+                <li>同じ時間に重なった予定を隠さず、同じ枠に書き足します（「◆非表示予定◆」の印は付きません）</li>
+                <li>「※」で始まる予定のうち、同じ日の直前か直後が「移動」の予定と、場所が庁外（応接室・県庁・庁舎・オンラインなど庁内扱いの語を含まない場所）の予定を出します。場所が空欄で前後に移動もない予定は出しません</li>
+              </ul>
+            </li>
+            <li><strong>見分け方</strong>：右上にハンドルの目印、表題に「（運転手用）」が付きます。ファイル名は「基本名_運転手用_作成日.xlsx」です</li>
+            <li>保存すると、出した「※」の予定の一覧がボタンの下に出ます。私的な予定も件名どおり紙に載るので、渡す前に確かめてください</li>
+          </ul>
+          <p class="note">運転手用を保存しても、② の期間、取得済みの予定、今週のまとめ、「前回の出力からの変化」の記録は変わりません。</p>
         </div>
       </details>
 
@@ -2387,7 +2448,11 @@ function parseIcsHolidays(text) {
 // ── builder.js ──
 
 
-async function buildXlsx(cells, merges, totalRows, totalCols, pageBreakRows, rowHeights, numWeeks) {
+// extra（運転手用だけが渡す。通常の出力では渡さないので、ファイルの中身は従来と同じ）
+//   weekStarts：各週の先頭行（週ごとに行数が違うとき。無ければ全週同じ行数とみなす）
+//   badge     ：{ png: Uint8Array, ratio: 横÷縦, rows: 目印を置く行（各週の先頭行） } 右上に置く「運転手用」の画像
+async function buildXlsx(cells, merges, totalRows, totalCols, pageBreakRows, rowHeights, numWeeks, extra = {}) {
+  const { weekStarts = null, badge = null } = extra;
   const ss = [], ssMap = new Map(), ssFc = new Map(), ssFz = new Map(), ssEm = new Map();
   function getSS(v, fc, fz, em) {
     const key = v + '||' + (fc || '000000') + '||' + (fz || '') + '||' + (em ? '1' : '0');
@@ -2509,10 +2574,13 @@ async function buildXlsx(cells, merges, totalRows, totalCols, pageBreakRows, row
 
   // 1週=1ページを保証する。視認性最優先（行高さは触らない）
   const blockSize = (numWeeks > 0) ? Math.round(totalRows / numWeeks) : totalRows;
+  // 週の範囲：weekStarts があればそれを使う（運転手用は時間外の行数が週ごとに違う）
+  const weekFrom = w => weekStarts ? weekStarts[w] : w * blockSize;
+  const weekTo   = w => weekStarts ? (w + 1 < weekStarts.length ? weekStarts[w + 1] : totalRows) : Math.min((w + 1) * blockSize, totalRows);
   let maxWeekH = 0;
   for (let w = 0; w < (numWeeks || 1); w++) {
     let wH = 0;
-    for (let r = w * blockSize; r < Math.min((w + 1) * blockSize, totalRows); r++) {
+    for (let r = weekFrom(w); r < weekTo(w); r++) {
       wH += (rowHeights?.[r] ?? 14.25);
     }
     if (wH > maxWeekH) maxWeekH = wH;
@@ -2540,8 +2608,10 @@ async function buildXlsx(cells, merges, totalRows, totalCols, pageBreakRows, row
   const printScale = Math.max(50, Math.min(100, Math.min(WIDTH_FIT_PCT, heightFitPct)));
 
   const dimRef = 'A1:' + colLtr(totalCols - 1) + totalRows;
+  const R_NS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
   const sheetXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-    '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+    // 画像を置くときだけ r: の名前空間を宣言する（通常の出力は従来どおり）
+    '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"' + (badge ? ' xmlns:r="' + R_NS + '"' : '') + '>' +
     // fitToPage は使わない：Fit-toモードだと手動改ページが無視され「1ページに2週」が起きるため。
     // スケール方式（下の pageSetup scale）＋手動改ページで「1週=1ページ」を確実にする。
     '<sheetPr/>' +
@@ -2559,6 +2629,8 @@ async function buildXlsx(cells, merges, totalRows, totalCols, pageBreakRows, row
       '<rowBreaks count="' + pageBreakRows.length + '" manualBreakCount="' + pageBreakRows.length + '">' +
       pageBreakRows.map(r => '<brk id="' + (r + 1) + '" man="1" max="16383"/>').join('') +
       '</rowBreaks>' : '') +
+    // 画像（drawing）は rowBreaks より後ろに置く（worksheet の子要素は順序が決まっている。KNOWN_ISSUES 1.1）
+    (badge ? '<drawing r:id="rId1"/>' : '') +
     '</worksheet>';
 
   const zip = new JSZip();
@@ -2567,8 +2639,10 @@ async function buildXlsx(cells, merges, totalRows, totalCols, pageBreakRows, row
     '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
     '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
     '<Default Extension="xml" ContentType="application/xml"/>' +
+    (badge ? '<Default Extension="png" ContentType="image/png"/>' : '') +
     '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
     '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' +
+    (badge ? '<Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>' : '') +
     '<Override PartName="/xl/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>' +
     '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' +
     '<Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/>' +
@@ -2616,7 +2690,44 @@ async function buildXlsx(cells, merges, totalRows, totalCols, pageBreakRows, row
   zip.file('xl/theme/theme1.xml', b64toBlob(themeB64));
   zip.file('xl/worksheets/sheet1.xml', sheetXml);
   zip.file('xl/sharedStrings.xml', ssXml);
+  if (badge) addBadgeParts(zip, badge, R_NS);
   return zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+}
+
+// 運転手用の目印（画像）を、各週の右上（J列の左端から・週の先頭2行）に置くための部品を足す。
+// 画像は1つだけ入れて、各週から参照する。大きさは高さ 34pt に固定し、横は画像の縦横比に合わせる
+// （先頭2行は 24pt＋14.25pt で、日付の見出しの線との間に少し隙間が残る。
+//   横は約120pt で、列幅が狭く測られる環境でも L 列の出力日時に重ならない）
+function addBadgeParts(zip, badge, R_NS) {
+  const EMU_PT = 12700;
+  const cy = 34 * EMU_PT;
+  const cx = Math.round(cy * badge.ratio);
+  const anchors = badge.rows.map((row, i) =>
+    '<xdr:oneCellAnchor>' +
+      '<xdr:from><xdr:col>9</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>' + row + '</xdr:row><xdr:rowOff>' + EMU_PT + '</xdr:rowOff></xdr:from>' +
+      '<xdr:ext cx="' + cx + '" cy="' + cy + '"/>' +
+      '<xdr:pic>' +
+        '<xdr:nvPicPr><xdr:cNvPr id="' + (i + 2) + '" name="運転手用 ' + (i + 1) + '" descr="運転手用"/><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr>' +
+        '<xdr:blipFill><a:blip r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill>' +
+        '<xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr>' +
+      '</xdr:pic>' +
+      '<xdr:clientData/>' +
+    '</xdr:oneCellAnchor>').join('');
+  zip.file('xl/drawings/drawing1.xml',
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="' + R_NS + '">' +
+    anchors + '</xdr:wsDr>');
+  zip.file('xl/drawings/_rels/drawing1.xml.rels',
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+    '<Relationship Id="rId1" Type="' + R_NS + '/image" Target="../media/image1.png"/>' +
+    '</Relationships>');
+  zip.file('xl/worksheets/_rels/sheet1.xml.rels',
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+    '<Relationship Id="rId1" Type="' + R_NS + '/drawing" Target="../drawings/drawing1.xml"/>' +
+    '</Relationships>');
+  zip.file('xl/media/image1.png', badge.png);
 }
 
 // ── review-core.js ──
@@ -3014,6 +3125,14 @@ for (const b of Object.values(EV_XF)) {
 
 
 const CHANGELOG = [
+  {
+    version: '1.19.0', date: '2026-10-22',
+    changes: [
+      { type: 'feature', text: '出力画面のいちばん下に「🚗 運転手用の出力」を追加しました。① 接続が済めば、ボタン1つで次の月曜から3週分の運転手用 Excel を保存できます（② の期間とは連動しません。週数は「変更」で1〜6週に変えられますが、次に開くと3週に戻ります）' },
+      { type: 'feature', text: '運転手用は通常の出力と同じ様式で、件名と場所を実際のまま出します（「予定あり」などへの変換や、場所を市町村名に丸める処理をしません）。17時以降の予定はすべて入るまで行を増やし、重なった予定も隠さずに書き足します。「※」で始まる予定も、前後に「移動」があるか場所が庁外なら出します' },
+      { type: 'feature', text: '運転手用の紙は、右上のハンドルの目印、表題の「（運転手用）」、ファイル名の「運転手用」で見分けられます。保存すると出した「※」の予定の一覧が画面に出るので、渡す前に確かめられます。通常の出力は何も変わりません' },
+    ],
+  },
   {
     version: '1.18.0', date: '2026-10-21',
     changes: [
@@ -3588,7 +3707,7 @@ function switchTab(mode) {
   icsFileContent = null;
   icsFileContent2 = null;
   document.getElementById('icsFileName2').textContent = '未選択（任意）';
-  lock('card2'); lock('card3');
+  lock('card2'); lock('card3'); lock('cardDriver');
   stepReset(2); stepReset(3);
   setLog('log2', '', '');
   setLog('log1', '', '');
@@ -4597,7 +4716,7 @@ function setupTokenClient(cid) {
 }
 async function onAuthenticated() {
   setLog('log1', '✓ 認証成功', 'ok');
-  unlock('card2'); stepDone(1);
+  unlock('card2'); unlock('cardDriver'); stepDone(1);
   initDefaultColorSelect(); renderRules();
   try {
     const r = await gapi('https://www.googleapis.com/oauth2/v2/userinfo');
@@ -4647,7 +4766,7 @@ async function onAuthenticated() {
 function signOut() {
   if (accessToken) google.accounts.oauth2.revoke(accessToken);
   accessToken = null; fetchedEvents = []; baselineEvents = null; rvCache = null;
-  lock('card2'); lock('card3');
+  lock('card2'); lock('card3'); lock('cardDriver');
   stepReset(2); stepReset(3);
   expandCard1();   // ① を元の表示に戻し、再ログインできるようにする
   const wsEl = document.getElementById('weekSummary'); if (wsEl) wsEl.innerHTML = '';
@@ -4848,7 +4967,7 @@ function processIcs() {
     const fileNote = icsFileContent2 ? '（2ファイル結合）' : '';
     setLog('log1', `✓ ${icsRawEvents.length}件のイベントを読み込みました${fileNote}（祝日: ${icsHolidays.size}件）`, 'ok');
     initDefaultColorSelect(); renderRules();
-    unlock('card2'); stepDone(1);
+    unlock('card2'); unlock('cardDriver'); stepDone(1);
     document.getElementById('calSelectWrap').style.display = 'none';
     document.getElementById('calSelect2Wrap').style.display = 'none';
     const cs3w = document.getElementById('calSelect3Wrap');
@@ -5537,13 +5656,24 @@ async function runPreflight() {
 }
 
 async function exportExcel(opts = {}) {
-  const preview = opts.preview === true;
-  const dryRun  = opts.dryRun === true;
-  const startStr = document.getElementById('startDate').value;
-  if (!startStr) { setLog('log3','開始日を選択してください','err'); return; }
-  const monday = new Date(startStr + 'T00:00:00');
-  const weeks  = effectiveWeeks;
-  if (!weeks || weeks < 1) { setLog('log3','週数を選択してください','err'); return; }
+  // 運転手用（opts.driver = { monday, weeks, events, holidays }）：期間・予定・祝日は呼び出し側から受け取る。
+  // 画面の開始日・週数、取得済みの予定（fetchedEvents）、今週のまとめ、前回の出力の記録には触れない。
+  // 通常の出力と違うのは drv で分けた箇所だけ（件名・場所の扱い／時間外の行数／重なり／「※」の予定／目印）
+  const drv = opts.driver || null;
+  const preview = !drv && opts.preview === true;
+  const dryRun  = !drv && opts.dryRun === true;
+  let monday, weeks;
+  if (drv) {
+    monday = drv.monday; weeks = drv.weeks;
+  } else {
+    const startStr = document.getElementById('startDate').value;
+    if (!startStr) { setLog('log3','開始日を選択してください','err'); return; }
+    monday = new Date(startStr + 'T00:00:00');
+    weeks  = effectiveWeeks;
+    if (!weeks || weeks < 1) { setLog('log3','週数を選択してください','err'); return; }
+  }
+  const evList   = drv ? drv.events   : fetchedEvents;   // 通常は取得済みの予定（従来どおり）
+  const holidays = drv ? drv.holidays : icsHolidays;
 
   const driverNameMW = (document.getElementById('driverNameMW')?.value || '').trim();
   const driverNameTF = (document.getElementById('driverNameTF')?.value || '').trim();
@@ -5566,10 +5696,62 @@ async function exportExcel(opts = {}) {
     }
     return d;
   }
-  const nextBizDay = getNextBizDay(icsHolidays);
+  const nextBizDay = getNextBizDay(holidays);
+
+  // ── 運転手用の下準備 ──
+  // 「※」で始まる予定を出すかの判定に使う、日ごとの時刻つき予定（開始順）
+  const drvDays = new Map();
+  if (drv) {
+    evList.forEach(ev => {
+      if (!ev.start?.dateTime) return;
+      const k = toDateStr(new Date(ev.start.dateTime));
+      if (!drvDays.has(k)) drvDays.set(k, []);
+      drvDays.get(k).push(ev);
+    });
+    drvDays.forEach(evs => evs.sort((a, b) => new Date(a.start.dateTime) - new Date(b.start.dateTime)));
+  }
+  // 「※」で始まる予定のうち、運転手用に出すもの：同じ日の直前か直後が「移動」／場所が庁外（庁内扱いの語を含まない）。
+  // 庁内扱いの語は「移動なしの確認」と同じ一覧（OUTING_INTERNAL_LOC）を使う
+  function drvStarredOk(ev) {
+    const evs = drvDays.get(toDateStr(new Date(ev.start.dateTime))) || [];
+    const i = evs.indexOf(ev);
+    const isMove = e => !!e && /移動/.test(stripHtml(e.summary || ''));
+    if (i >= 0 && (isMove(evs[i - 1]) || isMove(evs[i + 1]))) return true;
+    const loc = cleanLocation(stripHtml(ev.location || '')).trim();
+    return !!loc && !OUTING_INTERNAL_LOC.some(k => loc.includes(k));
+  }
+  // 運転手用で除外する予定か（「床屋」「散髪」は通常どおり除外。「※」は上の条件に当てはまらなければ除外）
+  function drvExcluded(ev) {
+    const raw = stripHtml(ev.summary || '').replace(/※日程は確定[^\n]*/g,'').replace(/※[^\n]*確定[^\n]*/g,'').trim();
+    if (raw.includes('床屋') || raw.includes('散髪')) return true;
+    return raw.startsWith('※') && !drvStarredOk(ev);
+  }
+  // 運転手用：その週の時間外に要る行数（時間外の予定が最も多い日に合わせる。日中から17時をまたぐ予定の分も足す）
+  function drvOtNeed(w) {
+    const wStart = new Date(monday); wStart.setDate(monday.getDate() + w*7);
+    const wEnd = new Date(wStart); wEnd.setDate(wStart.getDate() + 7);
+    const ext = [0,0,0,0,0], cnt = [0,0,0,0,0];
+    evList.forEach(ev => {
+      if (!ev.start?.dateTime || !ev.end?.dateTime) return;
+      const s = new Date(ev.start.dateTime), e = new Date(ev.end.dateTime);
+      if (e <= s || s < wStart || s >= wEnd) return;
+      const d = s.getDay() - 1;
+      if (d < 0 || d > 4 || holidays.has(toDateStr(s)) || drvExcluded(ev)) return;
+      const sm = s.getHours()*60 + s.getMinutes(), em = e.getHours()*60 + e.getMinutes();
+      if (sm >= EH*60) cnt[d]++;
+      else if (sm >= SH*60 && em > EH*60) ext[d] = Math.max(ext[d], Math.min(Math.ceil((em - EH*60) / 15), OT));
+    });
+    return Math.max(0, ...cnt.map((c, d) => c ? ext[d] + c : 0));
+  }
 
   const BLKFTR = 4;
-  const TR = BLOCK * weeks;
+  // 週ごとの時間外の行数と、各週の先頭行。通常は全週 OT 行で、先頭行は w * BLOCK（従来どおり）
+  const otRowsOf = Array.from({length: weeks}, (_, w) => drv ? Math.max(OT, drvOtNeed(w)) : OT);
+  const weekRo = [];
+  let TR = 0;
+  for (let w = 0; w < weeks; w++) { weekRo.push(TR); TR += BLKHDR + SLOTS + otRowsOf[w] + BLKFTR; }
+  const weekEndRow = w => (w + 1 < weeks ? weekRo[w + 1] : TR);   // その週の次の行（週の範囲は weekRo[w] 〜 この手前）
+  const drvStarred = [];   // 運転手用に出した「※」の予定（画面で確かめられるように一覧にする）
   const cells = Array.from({length:TR}, () => Array(COLS).fill(null));
   { const n=new Date(); var outDateStr=`${n.getFullYear()}/${String(n.getMonth()+1).padStart(2,'0')}/${String(n.getDate()).padStart(2,'0')} ${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`; }
   const merges = [];
@@ -5639,13 +5821,13 @@ async function exportExcel(opts = {}) {
     return isOT ? { L: b.OT, R: b.OT } : { L: b.L, R: b.R };
   }
 
-  fetchedEvents.sort((a, b) =>
+  evList.sort((a, b) =>
     new Date(a.start.dateTime || a.start.date) - new Date(b.start.dateTime || b.start.date)
   );
   // 取得サマリ（詳細ログ用）
   {
-    const total = fetchedEvents.length;
-    const allDay = fetchedEvents.filter(ev => !ev.start || !ev.start.dateTime).length;
+    const total = evList.length;
+    const allDay = evList.filter(ev => !ev.start || !ev.start.dateTime).length;
     const timed = total - allDay;
     addProcLog('🔍', `取得サマリ: 全${total}件 / 時刻指定${timed}件 / 終日${allDay}件 / 週数=${weeks} / モード=${inputMode}`, true);
   }
@@ -5653,7 +5835,7 @@ async function exportExcel(opts = {}) {
   {
     const INTERNAL_LOC = OUTING_INTERNAL_LOC;
     const byDay = new Map();
-    fetchedEvents.forEach(ev => {
+    evList.forEach(ev => {
       if (!ev.start || !ev.start.dateTime) return;
       const d = new Date(ev.start.dateTime); if (isNaN(d)) return;
       const k = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
@@ -5677,7 +5859,7 @@ async function exportExcel(opts = {}) {
   }
   // 終日イベントをループ前に1回だけ集計・ログ出力
   // ただし運転手指定パターン（「○○運転手」「○○運転手対応」）の終日イベントは別扱い
-  fetchedEvents.filter(ev => !ev.start || !ev.start.dateTime).forEach(ev => {
+  evList.filter(ev => !ev.start || !ev.start.dateTime).forEach(ev => {
     const sum = (ev.summary || '').trim();
     const dir = parseDriverDirective(sum);
     if (dir) {
@@ -5695,17 +5877,20 @@ async function exportExcel(opts = {}) {
 
   for (let w = 0; w < weeks; w++) {
     const wStart = new Date(monday); wStart.setDate(monday.getDate()+w*7);
-    const ro = w * BLOCK;
+    const ro = weekRo[w];
+    const otN = otRowsOf[w];   // この週の時間外の行数（通常は OT）
 
     const we = new Date(wStart); we.setDate(wStart.getDate()+6);
     const titleBase = `${getDocTitle()}（${wStart.getMonth()+1}／${wStart.getDate()}～${we.getMonth()+1}／${we.getDate()}）`;
     setC(ro,   11, outDateStr, XF.noneRight);
-    setC(ro+1, 0,  titleBase,  XF.none);
+    setC(ro+1, 0,  drv ? titleBase + '（運転手用）' : titleBase, XF.none);
+    // 運転手用：右上の目印を大きめに置くため、出力日時の行だけ少し高くする（表の部分の行は変えない）
+    if (drv) rowHeights[ro] = 24;
 
     const holidayWeekdays = new Set();
     for (let d = 0; d < 5; d++) {
       const dt = new Date(wStart); dt.setDate(wStart.getDate()+d);
-      if (icsHolidays.has(toDateStr(dt))) holidayWeekdays.add(d);
+      if (holidays.has(toDateStr(dt))) holidayWeekdays.add(d);
     }
 
     setC(ro+2, 0, null, XF.a3); setC(ro+2, 1, null, XF.b3);
@@ -5713,7 +5898,7 @@ async function exportExcel(opts = {}) {
     for (let d = 0; d < 5; d++) {
       const dt = new Date(wStart); dt.setDate(wStart.getDate()+d);
       const dtKey = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
-      const holiday = icsHolidays.get(dtKey);
+      const holiday = holidays.get(dtKey);
       const isNextBiz = dt.toDateString() === nextBizDay.toDateString();
       const dateText = `${dt.getMonth()+1}/${dt.getDate()}${DOW[dt.getDay()]}${holiday && !holidayWeekdays.has(d) ? '\n'+holiday : ''}`;
       setC(ro+2, DCOLS[d],   dateText, isNextBiz ? XF.dateNextBizL : XF.dateL);
@@ -5741,7 +5926,7 @@ async function exportExcel(opts = {}) {
     const overrideDriver = {};       // 名前の差し替え（「○○運転手」）
     const overrideDriverText = {};   // ※以降の自由文（そのまま表示）
     const noDriverDays = new Set();  // その日は運転手欄を出さない（上司の休暇等）
-    fetchedEvents.forEach(ev => {
+    evList.forEach(ev => {
       if (ev.start?.dateTime) return; // 終日のみ対象
       const ymd = ev.start?.date;
       if (!ymd) return;
@@ -5812,8 +5997,8 @@ async function exportExcel(opts = {}) {
     }
 
     const otBase = ro + BLKHDR + SLOTS;
-    for (let ot = 0; ot < OT; ot++) {
-      const isLast = ot===OT-1;
+    for (let ot = 0; ot < otN; ot++) {
+      const isLast = ot===otN-1;
       const aS=isLast?XF.aEnd:XF.aIn, bS=isLast?XF.bEnd:XF.bIn;
       const cS=isLast?XF.cEnd:XF.cIn, dS=isLast?XF.dEnd:XF.dIn;
       setC(otBase+ot, 0, null, aS); setC(otBase+ot, 1, null, bS);
@@ -5823,7 +6008,7 @@ async function exportExcel(opts = {}) {
       }
     }
 
-    const satRow = ro + BLKHDR + SLOTS + OT, sunRow = satRow+1;
+    const satRow = ro + BLKHDR + SLOTS + otN, sunRow = satRow+1;
     const satDt = new Date(wStart); satDt.setDate(wStart.getDate()+5);
     const sunDt = new Date(wStart); sunDt.setDate(wStart.getDate()+6);
     setC(satRow, 0, `${satDt.getMonth()+1}/${satDt.getDate()}`, XF.aWknd);
@@ -5840,7 +6025,7 @@ async function exportExcel(opts = {}) {
     const preEvsByDay = [[],[],[],[],[]];
     const wEnd = new Date(wStart); wEnd.setDate(wStart.getDate()+7);
 
-    fetchedEvents.forEach(ev => {
+    evList.forEach(ev => {
 
       if (!ev.start || !ev.start.dateTime) return;
       if (!ev.end   || !ev.end.dateTime)   return;
@@ -5878,7 +6063,10 @@ async function exportExcel(opts = {}) {
       }
       const rawSummary = (ev.summary||'').replace(/※日程は確定[^\n]*/g,'').replace(/※[^\n]*確定[^\n]*/g,'').trim();
       // 「ブロック」は除外せず表示（項目2で「予定あり」変換キーワードに含める）。※始まり・床屋・散髪は従来どおり除外
-      if (rawSummary.startsWith('※') || rawSummary.includes('床屋') || rawSummary.includes('散髪')) {
+      // 運転手用だけは、「※」で始まる予定のうち前後が「移動」か場所が庁外のものを出す（drvStarredOk）
+      const drvShowStar = !!drv && rawSummary.startsWith('※') && !rawSummary.includes('床屋') && !rawSummary.includes('散髪') && drvStarredOk(ev);
+      if (drvShowStar) drvStarred.push({ when: `${dateTag} ${pad(evStart.getHours())}:${pad(evStart.getMinutes())}`, title: rawSummary, loc: cleanLoc });
+      if (!drvShowStar && (rawSummary.startsWith('※') || rawSummary.includes('床屋') || rawSummary.includes('散髪'))) {
         const reason = rawSummary.startsWith('※')   ? '「※」で始まる'
                      : rawSummary.includes('床屋')  ? '「床屋」を含む'
                      :                                 '「散髪」を含む';
@@ -5898,7 +6086,18 @@ async function exportExcel(opts = {}) {
       }
       let displayMain = null;
       let forceTrailingPeriod = false;
-      if (main.startsWith('予定あり')) {
+      if (drv) {
+        // 運転手用：件名・場所は実際のまま（タイトル変換と、場所を市町村名に丸める処理をしない）。
+        // ただし通常の出力で「※場所・送迎等確認中」が付く予定（場所が空欄）には、運転手にも必要な注意書きなので同じく付ける
+        if (!rawLoc.trim()) {
+          const m = main.startsWith('予定あり') ? null : matchTitleRule(rawSummary, main);
+          if (main.startsWith('予定あり') || (m && m.type === 'rule' && m.rule.note)) {
+            displayMain = main + '　※場所・送迎等確認中';
+            effectiveLoc = '';
+            forceTrailingPeriod = true;
+          }
+        }
+      } else if (main.startsWith('予定あり')) {
         if (rawLoc.trim()) {
           const city = cityFromLoc(rawLoc);
           effectiveLoc = city ? city + '内' : cleanLoc;
@@ -5909,7 +6108,7 @@ async function exportExcel(opts = {}) {
           forceTrailingPeriod = true;
         }
       }
-      if (displayMain === null) {
+      if (!drv && displayMain === null) {
         // 判定は matchTitleRule に集約（「変換テスト」欄と同じロジック）
         const m = matchTitleRule(rawSummary, main);
         if (m && m.type === 'rule') {
@@ -6064,6 +6263,28 @@ async function exportExcel(opts = {}) {
             const visualLines = cellValNarrow.split('\n').reduce((acc, l) => acc + Math.max(1, Math.ceil([...l].length / 9)), 0);
             updateRowHeights(row, rightSpan, visualLines);
             addProcLog('🔁', `${dateTag}　右列に分割: 「${main}」`);
+          } else if (drv) {
+            // 運転手用：隠さずに、その時間を占めている予定のセルへ書き足す（「◆非表示予定◆」の印は付けない）
+            const addLines = [displayMain || main]; if (sub) addLines.push(sub); addLines.push(timeStr);
+            if (topRow === ro + 4) {
+              // 9時前から続く予定の枠は、あとで9時前の欄にまとめて書くので、そちらに加える
+              preEvsByDay[dayIdx].push({main: displayMain || main, timeStr, otXf: evXF(rawSummary||'', true), evFc, evEmph, preGridRows: 0});
+            } else {
+              const origCell = cells[topRow]?.[col];
+              if (origCell) {
+                origCell.v = String(origCell.v || '') + '\n' + addLines.join('\n');
+                // 1行枠を改行表示に置き換える処理（下の B-3）でも、書き足した分が消えないように控えにも足す
+                const rec = shortSlotCellsAll.get(`${topRow}_${col}`);
+                if (rec) rec.push(...addLines);
+                const mIdx = mergeMap.get(`${topRow}_${col}`);
+                const narrow = mIdx !== undefined && merges[mIdx].cs === 1;   // 右列に分割済みなら半分の幅
+                const rs = mIdx !== undefined ? merges[mIdx].rs : 1;
+                const perLine = narrow ? 9 : 14;
+                updateRowHeights(topRow, rs, origCell.v.split('\n').reduce((a, l) => a + Math.max(1, Math.ceil([...l].length / perLine)), 0));
+                if (!narrow) origCell.fz = calcFz(origCell.v);
+              }
+            }
+            addProcLog('🔁', `${dateTag}　重複（同じ枠に書き足し）: 「${main}」 ${timeStr}`);
           } else {
             const origCell = cells[topRow]?.[col];
             const origV = String(origCell?.v || '');
@@ -6128,11 +6349,13 @@ async function exportExcel(opts = {}) {
       if (!evs.length) continue;
       let otOffset = 0;
       for (const m of merges) {
-        if (m.c !== col || m.cs !== 2) continue;
+        // 運転手用は、右列に分割した（幅1の）予定が17時をまたぐ場合も数える（時間外の予定と重ねて消さないため）。
+        // 数えるのは日中から始まる予定だけ（土日欄の横長の結合などは、時間外より下の行なので除く）
+        if (drv ? (m.cs > 2 || (m.c !== col && m.c !== col + 1) || m.r >= otBase) : (m.c !== col || m.cs !== 2)) continue;
         const mEnd = m.r + m.rs - 1;
         if (mEnd >= otBase) otOffset = Math.max(otOffset, mEnd - otBase + 1);
       }
-      const available = OT - otOffset;
+      const available = otN - otOffset;
       if (available <= 0) {
         evs.forEach(e => addProcLog('🔁', `${e.dateTag}　OT行満杯（非表示）: 「${e.main}」 ${e.timeStr}`));
         continue;
@@ -6141,7 +6364,7 @@ async function exportExcel(opts = {}) {
       let rowStart = otOffset;
       for (let i = 0; i < renderCount; i++) {
         const {main, sub, timeStr, xf, otXf, evFc, evEmph} = evs[i];
-        const rowsLeft = OT - rowStart;
+        const rowsLeft = otN - rowStart;
         const evLeft = renderCount - i;
         const rowCount = Math.ceil(rowsLeft / evLeft);
         const cellVal = [main, sub, timeStr].filter(Boolean).join('\n');
@@ -6162,10 +6385,10 @@ async function exportExcel(opts = {}) {
     for (const d of holidayWeekdays) {
       const col = DCOLS[d];
       const dt = new Date(wStart); dt.setDate(wStart.getDate()+d);
-      const hName = icsHolidays.get(toDateStr(dt)) || '祝日';
+      const hName = holidays.get(toDateStr(dt)) || '祝日';
       setC(ro + BLKHDR, col,   hName, XF.evRedL, 'CC0000', 14);
       setC(ro + BLKHDR, col+1, null,  XF.evRedR, null);
-      merges.push({r: ro + BLKHDR, c: col, rs: SLOTS + OT, cs: 2});
+      merges.push({r: ro + BLKHDR, c: col, rs: SLOTS + otN, cs: 2});
     }
 
     // A-6: 9:00前イベントをヘッダ行（ro+4）に表示（グリッド内終了なら延伸）
@@ -6192,7 +6415,7 @@ async function exportExcel(opts = {}) {
   {
     const weekHs = Array.from({length: weeks}, (_, w) => {
       let h = 0;
-      for (let r = w * BLOCK; r < (w + 1) * BLOCK; r++) h += rowHeights[r];
+      for (let r = weekRo[w]; r < weekEndRow(w); r++) h += rowHeights[r];
       return h;
     });
     const maxH = Math.max(...weekHs);
@@ -6200,7 +6423,7 @@ async function exportExcel(opts = {}) {
       const deficit = maxH - weekHs[w];
       if (deficit > 0.1) {
         const extra = deficit / SLOTS;
-        for (let s = 0; s < SLOTS; s++) rowHeights[w * BLOCK + BLKHDR + s] += extra;
+        for (let s = 0; s < SLOTS; s++) rowHeights[weekRo[w] + BLKHDR + s] += extra;
       }
     }
   }
@@ -6219,6 +6442,18 @@ async function exportExcel(opts = {}) {
       // 値が依然として「空白結合」のままなら、改行結合へ書き換え
       cell.v = origLines.join('\n');
     });
+  }
+
+  // 運転手用：ファイルを作って保存するだけ。今週のまとめ・処理ログ・前回の出力の記録・③の完了表示には触れない。
+  // エラーは呼び出し側（exportDriverExcel）で表示する
+  if (drv) {
+    let badge = null;
+    try { badge = await makeDriverBadgePng(); } catch (e) { console.warn('driver badge error:', e); }   // 目印が作れなくても、表題の（運転手用）で区別できる
+    const blob = await buildXlsx(cells, merges, TR, COLS, pageBreakRows, rowHeights, weeks,
+      { weekStarts: weekRo, badge: badge && { ...badge, rows: weekRo } });
+    const outName = resolveFilename().replace(/(_\d{8}\.xlsx)$/, '_運転手用$1');   // 例：schedule_運転手用_20261022.xlsx
+    downloadBlob(blob, outName);
+    return { outName, starred: drvStarred };
   }
 
   // まとめの表示は補助機能。万一エラーになっても Excel の作成・ダウンロードは止めない
@@ -6245,6 +6480,136 @@ async function exportExcel(opts = {}) {
     setLog('log3', 'エラー: ' + e.message, 'err');
     console.error(e);
   }
+}
+
+// ── 🚗 運転手用の出力（v1.19.0〜）──────────────────────────
+// 毎週木曜に翌週から3週分を印刷して運転手に渡す紙。様式は通常の出力と同じで、件名・場所を実際のまま出し、
+// 夕方の予定・重なった予定・外出を伴う「※」の予定を隠さない（中身は exportExcel の drv の分岐）。
+// 期間は「押した日の次の月曜から」。② 期間の開始日・週数とは連動させない（木曜に開くと今週が初期値のため）
+const DRIVER_WEEKS_DEFAULT = 3;
+let driverWeeks = DRIVER_WEEKS_DEFAULT;   // 例外的に変えても記憶しない（翌週に持ち越さないため）
+function driverMonday(now = new Date()) {
+  const d = new Date(now); d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + ((8 - d.getDay()) % 7 || 7));   // 次の月曜（月曜に押したら翌週の月曜）
+  return d;
+}
+function driverPeriodText(monday, weeks) {
+  const last = new Date(monday); last.setDate(monday.getDate() + weeks * 7 - 1);
+  return `${monday.getMonth() + 1}/${monday.getDate()}（月）〜${last.getMonth() + 1}/${last.getDate()}（日）・${weeks}週`;
+}
+function renderDriverPeriod() {
+  const el = document.getElementById('dvoPeriod');
+  if (el) el.textContent = driverPeriodText(driverMonday(), driverWeeks);
+  const sel = document.getElementById('dvoWeeks');
+  if (sel) sel.value = String(driverWeeks);
+}
+function toggleDriverWeeks() {
+  const wrap = document.getElementById('dvoWeeksWrap');
+  if (wrap) wrap.hidden = !wrap.hidden;
+}
+function setDriverWeeks(v) {
+  const n = parseInt(v, 10);
+  driverWeeks = (n >= 1 && n <= 6) ? n : DRIVER_WEEKS_DEFAULT;
+  renderDriverPeriod();
+}
+// 期間の予定と祝日を用意する。通常の出力用の予定（fetchedEvents）や祝日（icsHolidays）は書き換えない
+async function loadDriverEvents(monday, weeks) {
+  const end = new Date(monday); end.setDate(monday.getDate() + weeks * 7);
+  const isValid = e => e.start && (e.start.dateTime || e.start.date);
+  if (inputMode === 'api') {
+    // Google API：押すたびにその期間を取り直す。通常の「予定を取得」と同じく、
+    // 1つ目のカレンダーは必須、2つ目以降と祝日は失敗しても続ける
+    const ids = ['calSelect', 'calSelect2', 'calSelect3'].map(id => document.getElementById(id)?.value || '').filter(Boolean);
+    const q = `timeMin=${monday.toISOString()}&timeMax=${end.toISOString()}&singleEvents=true`;
+    const url = id => `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(id)}/events?${q}&orderBy=startTime&maxResults=2500`;
+    const [first, ...rest] = ids;
+    const [items1, others, hr] = await Promise.all([
+      gapiAll(url(first)),
+      Promise.all(rest.map(id => gapiAll(url(id)).catch(() => []))),
+      gapi(`https://www.googleapis.com/calendar/v3/calendars/ja.japanese%23holiday%40group.v.calendar.google.com/events?${q}&maxResults=100`).catch(() => null),
+    ]);
+    const holidays = new Map(HARDCODED_HOLIDAYS);
+    (hr?.items || []).forEach(ev => {
+      const d = ev.start?.date;
+      if (d && ev.summary && !HOLIDAY_EXCLUSIONS.has(ev.summary)) holidays.set(d, ev.summary);
+    });
+    return { events: items1.concat(...others).filter(isValid), holidays };
+  }
+  // .ics（ファイル／URL）：読み込み済みの予定から期間で絞る。元の予定は通常の出力と共有しているので、複製して使う
+  if (!icsRawEvents.length) throw new Error('先に ① 接続で .ics ファイルを読み込んでください');
+  const events = icsRawEvents.filter(ev => {
+    const s = new Date(ev.start?.dateTime || ev.start?.date || '');
+    return s >= monday && s < end;
+  });
+  return { events: JSON.parse(JSON.stringify(events)), holidays: new Map(icsHolidays) };
+}
+async function exportDriverExcel() {
+  const monday = driverMonday(), weeks = driverWeeks;
+  renderDriverPeriod();   // ページを開いたまま日付が変わっていても、押した日で数え直す
+  const btn = document.getElementById('dvoBtn');
+  if (btn) btn.disabled = true;
+  setLog('logDriver', '予定を取得しています…', '');
+  try {
+    const { events, holidays } = await loadDriverEvents(monday, weeks);
+    const res = await exportExcel({ driver: { monday, weeks, events, holidays } });
+    setLog('logDriver', `✓ ${res.outName} を保存しました（${driverPeriodText(monday, weeks)}）`, 'ok');
+    renderDriverStarred(res.starred);
+  } catch (e) {
+    console.error(e);
+    setLog('logDriver', e.authExpired
+      ? 'ログインの有効期限が切れました。② 期間の「📅 予定を取得」を押すと再ログインできます。そのあと、もう一度押してください'
+      : 'エラー：' + e.message, 'err');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+// 出した「※」の予定の一覧。私的な予定も件名どおり紙に載るので、渡す前に確かめられるように画面に出す
+function renderDriverStarred(list) {
+  const el = document.getElementById('dvoStarred');
+  if (!el) return;
+  el.hidden = false;
+  if (!list.length) { el.textContent = '「※」で始まる予定は出していません。'; return; }
+  el.innerHTML = `「※」で始まる予定のうち、運転手用に出したもの（${list.length}件）<ul>`
+    + list.map(s => `<li>${escHtml(s.when)}　${escHtml(s.title)}${s.loc ? `（${escHtml(s.loc)}）` : '（前後に「移動」あり）'}</li>`).join('')
+    + '</ul>';
+}
+// 目印（ハンドルの図＋「運転手用」）を描く。白黒で印刷しても分かるよう、黒地に白抜きにする。
+// ハンドルは円と線だけで描く（Unicode にハンドルの文字は無く、似た形の「☸」は法輪なので使わない）
+function drawDriverBadge(scale = 4) {
+  const H = 38 * scale, label = '運転手用';
+  const font = `bold ${22 * scale}px "BIZ UDPGothic", "BIZ UDGothic", "Yu Gothic", Meiryo, sans-serif`;
+  const probe = document.createElement('canvas').getContext('2d');
+  probe.font = font;
+  const W = H + Math.ceil(probe.measureText(label).width) + 10 * scale;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const g = cv.getContext('2d');
+  // 黒い角丸の板
+  const r = 6 * scale;
+  g.fillStyle = '#000';
+  g.beginPath();
+  g.moveTo(r, 0); g.arcTo(W, 0, W, H, r); g.arcTo(W, H, 0, H, r); g.arcTo(0, H, 0, 0, r); g.arcTo(0, 0, W, 0, r);
+  g.closePath(); g.fill();
+  // ハンドル：外輪・左右と下へのスポーク・中心
+  const cx = H / 2 + 2 * scale, cy = H / 2, R = 13 * scale;
+  g.strokeStyle = '#fff'; g.fillStyle = '#fff'; g.lineWidth = 3 * scale;
+  g.beginPath(); g.arc(cx, cy, R, 0, Math.PI * 2); g.stroke();
+  g.beginPath(); g.moveTo(cx - R, cy); g.lineTo(cx + R, cy); g.moveTo(cx, cy); g.lineTo(cx, cy + R); g.stroke();
+  g.beginPath(); g.arc(cx, cy, 4.5 * scale, 0, Math.PI * 2); g.fill();
+  // 文字
+  g.font = font; g.textBaseline = 'middle';
+  g.fillText(label, H + 2 * scale, H / 2 + scale);
+  return cv;
+}
+async function makeDriverBadgePng() {
+  const cv = drawDriverBadge();
+  const blob = await new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error('目印の画像を作れませんでした')), 'image/png'));
+  return { png: new Uint8Array(await blob.arrayBuffer()), ratio: cv.width / cv.height };
+}
+// 画面のカードにも、紙と同じ目印を出す
+function renderDriverBadgeUI() {
+  const img = document.getElementById('dvoBadge');
+  if (!img) return;
+  try { img.src = drawDriverBadge(2).toDataURL('image/png'); img.hidden = false; } catch (e) { /* 描けない環境では文字の見出しだけ */ }
 }
 
 // ── 📈 振り返り（テスト運用中） ──────────────────────────
@@ -6827,6 +7192,8 @@ renderOtOkKwSection();
 renderThemeUI();
 renderDandoriLists();   // 初期値に足した語があれば、ここで編集済みの一覧にも足される
 renderDandoriLinkUI();
+renderDriverPeriod();
+renderDriverBadgeUI();
 updateApiSetupHint();
 ['calSelect', 'calSelect2', 'calSelect3'].forEach(id => document.getElementById(id)?.addEventListener('change', updateCalSummary));
 updateCalSummary();
@@ -6987,6 +7354,9 @@ window.renderRulesPreview = renderRulesPreview;
 window.toggleRuleEdit     = toggleRuleEdit;
 window.toggleDriverEdit   = toggleDriverEdit;
 window.exportExcel   = exportExcel;
+window.exportDriverExcel = exportDriverExcel;
+window.toggleDriverWeeks = toggleDriverWeeks;
+window.setDriverWeeks    = setDriverWeeks;
 window.setWeekCount  = setWeekCount;
 window.copyProcessLog = copyProcessLog;
 window.toggleDetailLogs = toggleDetailLogs;
